@@ -1,0 +1,6 @@
+flask
+pymongo
+argon2-cffi
+PyJWT
+eventlet
+gunicorn

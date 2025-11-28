@@ -1,0 +1,88 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.webix.com/edge/webix.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet" type="text/css">
+    <script src="https://cdn.webix.com/edge/webix.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="/static/custom.css">
+    <title>Login</title>
+</head>
+<body>
+    <script>
+        webix.ready(function(){
+            webix.ui({
+                rows:[
+                    {
+                    },
+                    {
+                        cols:[
+                            {},
+                            {
+                                view:"form", 
+                                id:"log_form",
+                                width:360,
+                                elements:[
+ 
+
+                                    { view:"label",label:"",align:"center", css:"loginLogo"},
+                                    { view:"text", label:"User ID", labelWidth:100, name:"uid",required:true, on: {
+                                        // Re-enable the button when the user starts typing
+                                        onTimedKeyPress: function(){
+                                            $$("login_button").enable();
+                                        }
+                                    }},
+                                    { view:"text", type:"password", labelWidth:100, label:"Password", name:"password", required:true, on: {
+                                        // Re-enable the button when the user starts typing
+                                        onTimedKeyPress: function(){
+                                            $$("login_button").enable();
+                                        }
+                                    }},
+                                    { margin:5, cols:[
+                                        { view:"button", value:"Login" , css:"webix_primary",  id: "login_button", click:function(){
+                                            let loginBtn = $$("login_button")
+                                            let form = $$("log_form");
+                                            if(form.validate()){
+                                                loginBtn.disable();
+                                                webix.message("sending data");
+                                                webix.ajax()
+                                                .post("/users/login", form.getValues(), function(response){
+                                                    window.location.href = '/';
+                                                })
+                                                .fail(function(xhr){
+                                                    loginBtn.enable();
+                                                    if(xhr.status === 401){
+                                                        webix.message({type:"error",text:"Akun non-aktif, mohon kontak manager"});
+                                                    } else if(xhr.status === 404){
+                                                        webix.message({type:"error",text:"ID atau Password Salah, mohon coba lagi"});
+                                                    }
+                                                    else{
+                                                        webix.message({ type:"error", text:"Login failed" });
+                                                    }
+                                                });
+                                            }
+                                            else
+                                            {
+                                                webix.message("Tolong isi seluruh text field!");
+                                            }
+                                        }}
+                                    ]},
+                                    // {% with messages = get_flashed_messages() %}
+                                            // {% if messages %}
+                                            //     {% for message in messages %}
+                                                    { view:"label",label:"{{ message }}",align:"center", height:50}
+                                            //     {% endfor %}
+                                            // {% endif %}
+                                    // {% endwith %}
+                                ],
+                            },
+                            {}
+                        ]
+                    },
+                    {}
+                ]
+            })
+        })
+    </script>
+</body>
+</html>

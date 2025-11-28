@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.webix.com/edge/webix.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet"
+        type="text/css">
+    <link rel="stylesheet" href="/static/custom.css">
+    <script src="https://cdn.webix.com/edge/webix.js" type="text/javascript"></script>
+    <title>{{title}}</title>
+</head>
+
+<body>
+    <script>
+        function arrivalDelBtn(id) {
+            const datatable = $$("arrivalItemsDatatable");
+            datatable.remove(id);
+            if (datatable.count() === 0) {
+                datatable.showOverlay("No items added yet.");
+            }
+        }
+        var shipmentDelBtn = function (id) {
+            const datatable = $$("shipmentItemsDatatable");
+            datatable.remove(id);
+            if (datatable.count() === 0) {
+                datatable.showOverlay("No items added yet.");
+            }
+        };
+        var allProductOptions = new webix.DataCollection({
+            url: "/api/product/options"
+        });
+        function viewShipmentItems(id) {
+            if (!id) return;
+            const modal = $$("shipmentItemModal");
+            const datatable = $$("shipmentItemModalDatatable");
+            datatable.clearAll();
+            modal.show();
+            const url = "/api/shipments/detail?id=" + id;
+            webix.ajax().get(url).then(function (res) {
+                let data;
+                try {
+                    data = res.json();
+                } catch (e) {
+                    webix.message({
+                        text: e,
+                        type: "error"
+                    });
+                    modal.hide();
+                    return;
+                }
+                if (data) {
+                    datatable.parse(data);
+                } else {
+                    webix.message({
+                        text: "Error: Could not find items in the report.",
+                        type: "error"
+                    });
+                    modal.hide();
+                }
+            }).fail(function (err) {
+                webix.message({
+                    text: "Server error fetching shipment details.",
+                    type: "error"
+                });
+                modal.hide();
+            });
+        }
+        function viewArrivalItems(id) {
+            if (!id) return;
+            const modal = $$("arrivalLogModalItem");
+            const datatable = $$("arrivalItem");
+            datatable.clearAll();
+            modal.show();
+            const url = "/api/arrival/detail?id=" + id;
+            webix.ajax().get(url).then(function (res) {
+                let data;
+                try {
+                    data = res.json();
+                } catch (e) {
+                    webix.message({
+                        text: e,
+                        type: "error"
+                    });
+                    modal.hide();
+                    return;
+                }
+                if (data) {
+                    datatable.parse(data);
+                } else {
+                    webix.message({
+                        text: "Error: Could not find items in the report.",
+                        type: "error"
+                    });
+                    modal.hide();
+                }
+            }).fail(function (err) {
+                webix.message({
+                    text: "Server error fetching arrival details.",
+                    type: "error"
+                });
+                modal.hide();
+            });
+        }
+        function Detailfunction(productId) {
+            if (!productId) return;
+
+            const modal = $$("detailProductModal");
+            const form = $$("detailProductForm");
+
+            form.clearValidation();
+            form.clear();
+            form.parse({ namaProduk: "Loading details..." });
+            modal.show();
+            const url = "/api/product/detail?id=" + productId;
+            webix.ajax().get(url).then(function (res) {
+                let data;
+                try {
+                    data = res.json();
+                } catch (e) {
+                    webix.message({
+                        text: "Error: Invalid response from server.",
+                        type: "error"
+                    });
+                    modal.hide();
+                    return;
+                }
+
+                if (data && !data.error) {
+                    const categoryToId = {
+                        "Electronics": "1", "Apparels": "2", "Furnitures": "3",
+                        "Healths": "4", "Seasonals": "5", "Consumables": "6"
+                    };
+                    const abcToId = { "A": "1", "B": "2", "C": "3" };
+                    const statusToId = { "Aktif": "1", "Non-Aktif": "2" };
+                    const flatData = {
+                        "_id": data._id,
+                        "namaProduk": data.namaProduk,
+                        "barcodeEAN": data.barcodeEAN,
+                        "deskripsi": data.deskripsi,
+                        "merk": data.merk,
+                        "klasifikasi.namaKategori": categoryToId[data.klasifikasi.namaKategori],
+                        "klasifikasi.analisisABC": abcToId[data.klasifikasi.analisisABC],
+                        "statusKontrol.status": statusToId[data.statusKontrol.status],
+                        "satuan.unitJual": data.satuan.unitJual,
+                        "satuan.unitSimpan": data.satuan.unitSimpan,
+                        "logistik.referensiDimensiUnitSimpanCM_PLT": data.logistik.referensiDimensiUnitSimpanCM_PLT
+                    };
+                    form.parse(flatData);
+
+                } else {
+                    webix.message({
+                        text: "Error fetching details: " + (data.error || "Unknown error"),
+                        type: "error"
+                    });
+                    modal.hide();
+                }
+            }).fail(function (err) {
+                webix.message({
+                    text: "Server error fetching details. Check backend route.",
+                    type: "error"
+                });
+                modal.hide();
+            });
+        }
+        function sanitizeProductData(values) {
+            const sanitized = { ...values };
+            const stringKeys = [
+                "namaProduk", "barcodeEAN", "deskripsi", "merk",
+                "klasifikasi.namaKategori", "klasifikasi.analisisABC",
+                "satuan.unitJual", "satuan.unitSimpan",
+                "logistik.referensiDimensiUnitSimpanCM_PLT"
+            ];
+
+            stringKeys.forEach(key => {
+                if (sanitized[key] && typeof sanitized[key] === 'string') {
+                    sanitized[key] = sanitized[key].trim();
+                }
+            });
+            return sanitized;
+        }
+
+        webix.ready(function () {
+            webix.attachEvent("onAjaxError", function (xhr) {
+                if (xhr.status === 401) {
+                    window.location.href = "/";
+                }
+            });
+            responsive: true,
+                webix.rules.isNumberOrEmpty = function (value) {
+                    if (value === "") return true;
+                    return webix.rules.isNumber(value);
+                };
+
+            webix.rules.isDimension = function (value) {
+                if (!value || value.trim() === "") return false;
+                return /^\d+(\.\d+)?x\d+(\.\d+)?x\d+(\.\d+)?$/.test(value);
+            };
+            const categoryOptions = [
+                { "id": "1", "value": "Electronics" }, { "id": "2", "value": "Apparels" }, { "id": "3", "value": "Furnitures" },
+                { "id": "4", "value": "Healths" }, { "id": "5", "value": "Seasonals" }, { "id": "6", "value": "Consumables" }
+            ];
+
+            const abcOptions = [
+                { "id": "1", "value": "A" }, { "id": "2", "value": "B" }, { "id": "3", "value": "C" }
+            ];
+
+            //{% if firstTime %}
+            let first = `{{firstTime}}`;
+            changePasswordModal = webix.ui({
+                view: "window",
+                id: "updatePasswordFirstTime",
+                width: 400,
+                position: "center",
+                modal: true,
+                head: "Change Password",
+                body: {
+                    view: "form",
+                    id: "resetPasswordForm",
+                    elements: [
+                        {
+                            view: "text",
+                            type: "password",
+                            name: "newPassword",
+                            label: "New Password",
+                            placeholder: "Enter new password",
+                            labelWidth: 150,
+                            required: true
+                        },
+                        {
+                            view: "text",
+                            type: "password",
+                            name: "checkPassword",
+                            label: "Confirm Password",
+                            placeholder: "Re-enter new password",
+                            labelWidth: 150,
+                            required: true
+                        },
+                        {
+                            margin: 5,
+                            cols: [
+                                {
+                                    view: "button",
+                                    value: "Reset Password",
+                                    css: "webix_primary",
+                                    click: function () {
+                                        const form = $$('resetPasswordForm');
+                                        if (!form.validate()) {
+                                            webix.message({
+                                                type: "error",
+                                                text: "All fields must be filled correctly."
+                                            });
+                                            return;
+                                        }
+                                        const values = form.getValues();
+                                        if (values.newPassword !== values.checkPassword) {
+                                            webix.message({
+                                                type: "error",
+                                                text: "Passwords do not match."
+                                            });
+                                            return;
+                                        }
+                                        webix.ajax()
+                                            .headers({ 'Content-Type': 'application/json' })
+                                            .patch('/users/api/resetPassword', JSON.stringify({ _id: first, newPassword: values.newPassword }),
+                                                function (text, data) {
+                                                    const response = JSON.parse(text);
+                                                    if (response.status === "error") {
+                                                        webix.message({
+                                                            type: "error",
+                                                            text: "Error: " + response.text
+                                                        });
+                                                    } else {
+                                                        webix.message('Password successfully changed');
+                                                        $$('updatePasswordFirstTime').close();
+                                                    }
+                                                }
+                                            )
+                                            .fail(function (xhr) {
+                                                console.log(xhr.status);
+                                                if (xhr.status === 403) {
+                                                    webix.message({
+                                                        type: "error",
+                                                        text: "No Access to reset password!"
+                                                    })
+                                                } else {
+                                                    webix.message({
+                                                        type: "error",
+                                                        text: "Error at resetting password!"
+                                                    })
+                                                }
+                                            })
+                                    }
+                                },
+                                {
+                                    view: "button",
+                                    value: "Cancel",
+                                    click: function () {
+                                        $$('updatePasswordFirstTime').close();
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            view: "label",
+                            label: "change password immediately to ensure safety",
+                            align: "center"
+                        }
+                    ],
+                    rules: {
+                        "newPassword": webix.rules.isNotEmpty,
+                        "checkPassword": webix.rules.isNotEmpty
+                    }
+                }
+            }).show();
+            delete first;
+            //{% endif %}
+            webix.ui({
+                responsive: true,
+                view: "layout",
+                type: "clean",
+                rows: [{
+                    view: "toolbar",
+                    height: 65,
+                    padding: 10,
+                    elements: [{
+                        view: "label",
+                        label: "",
+                        css: "logo",
+                        width: 175,
+                        height: 50,
+                        type: "webix_secondary",
+                        click: function () {
+                            window.location.href = "/";
+                        }
+                    },
+                    {
+                        width: 1250
+                    },
+                    {
+                        view: "label",
+                        width: 150,
+                        label: "Hello! {{name}}",
+                        autowidth: true
+                    },
+                    {
+                        view: "label",
+                        width: 100,
+                        label: "As {{role}}",
+                        labelWidth: "auto"
+                    },
+                    {
+                        view: "button",
+                        width: 130,
+                        label: " Logout",
+                        click: function () {
+                            window.location.href = '/users/logout';
+                        }
+                    },
+                    {}
+
+                    ]
+                },
+                {
+                    cols: [{
+                        view: "sidebar",
+                        id: "mainSidebar",
+                        css: "sidebar-bg",
+                        collapsed: true,
+                        width: 250,
+                        value: "dashboard",
+                        data: [{
+                            id: "dashboard",
+                            icon: "mdi mdi-home",
+                            value: "Dashboard"
+                        }
+                            //{% if Perm['retail and shipment'] %}
+                            ,
+                        {
+                            id: "supplyAndRetailManagement",
+                            icon: "mdi mdi-city",
+                            value: "Supply and Retail Management",
+                        }
+                            // {% endif %}
+                            // {% if Perm['account management'] %}
+                            ,
+                        {
+                            id: "users_management",
+                            icon: "mdi mdi-account-supervisor",
+                            value: "Users management"
+                        },
+                            // {% endif %}
+                        ]
+                    },
+                    {
+
+                        type: "clean",
+                        rows: [{
+                            paddingX: 30,
+                            height: 70,
+                            cols: [{
+                                type: "clean",
+                                template: "<H1>{{title}}</H1>",
+                                width: 800,
+                            },
+                            {}
+                            ]
+                        },
+                        {
+                            paddingX: 20,
+                            cols: [
+                                {
+                                    type: "clean",
+                                    margin: 20,
+                                    paddingX: 30,
+                                    width: 750,
+                                    rows: [
+                                        {
+
+                                            height: 110,
+                                            rows: [
+                                                {
+                                                    view: "search",
+                                                    id: "searchProduct",
+                                                    placeholder: "Search everything on product table",
+                                                    on: {
+                                                        "onTimedKeyPress": function () {
+                                                            let text = this.getValue().toLowerCase();
+                                                            $$('productTable').filter(searchFilterProduct, text);
+                                                        }
+                                                    }
+                                                }
+                                                //{% if Perm['report data'] %}
+                                                ,
+                                                {
+                                                    cols: [
+                                                        {
+                                                            view: "button",
+                                                            css: "webix_primary",
+                                                            value: "Create product",
+                                                            click: function () {
+                                                                $$('createProductModal').show();
+                                                            }
+                                                        },
+                                                        {
+                                                            view: "button",
+                                                            css: "webix_primary",
+                                                            value: "Create Arrival Report",
+                                                            click: function () {
+                                                                $$('arrivalItemsDatatable').showOverlay("No items added yet.");
+                                                                $$('arrivalReportModal').show();
+                                                            }
+                                                        },
+                                                        {
+                                                            view: "button",
+                                                            css: "webix_primary",
+                                                            value: "Create Shipment Report",
+                                                            click: function () {
+                                                                $$('shipmentModal').show();
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                                // {% endif %}
+                                                ,
+                                                {
+                                                    cols: [
+                                                        {
+                                                            view: "button",
+                                                            css: "webix_primary",
+                                                            value: "See Product Log",
+                                                            click: function () {
+                                                                $$('productLogModal').show();
+                                                            }
+                                                        },
+                                                        {
+                                                            view: "button",
+                                                            css: "webix_primary",
+                                                            value: " See Arrival Log",
+                                                            click: function () {
+                                                                $$('arrivalLogModal').show();
+                                                            }
+                                                        },
+                                                        {
+                                                            view: "button",
+                                                            css: "webix_primary",
+                                                            value: "See Shipment Log",
+                                                            click: function () {
+                                                                $$('shipmentLogModal').show();
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            view: "datatable",
+                                            id: "productInventoryTable",
+                                            height: 570,
+                                            columns: [
+                                                {
+                                                    id: "inventoryId",
+                                                    name: "_id",
+                                                    width: 100,
+                                                    header: "ID",
+                                                    template: function (obj) {
+                                                        if (obj._id) {
+                                                            return obj._id;
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    id: "productId",
+                                                    name: "productID",
+                                                    width: 200,
+                                                    header: "Product ID",
+                                                    template: function (obj) {
+                                                        if (obj.productID) {
+                                                            return obj.productID;
+                                                        }
+                                                    }
+
+                                                },
+                                                {
+
+                                                    id: "quantityNowProduct",
+                                                    name: "quantityNow",
+                                                    width: 150,
+                                                    header: "Qty/Unit Now",
+                                                    template: function (obj) {
+                                                        if (obj.quantityNow) {
+                                                            return obj.quantityNow;
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    id: "latestAcceptedDateProduct",
+                                                    name: "latestAcceptedDate",
+                                                    header: "Last Accepted",
+                                                    width: 215,
+                                                    template: function (obj) {
+                                                        if (obj.latestAcceptedDate) {
+                                                            return obj.latestAcceptedDate;
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            url: "/api/product/inventory"
+                                        }
+                                    ]
+                                },
+                                {
+                                    view: "datatable",
+                                    id: "productTable",
+                                    width: 1050,
+                                    height: 700,
+                                    columns: [
+                                        {
+                                            id: "_id",
+                                            width: 100,
+                                            view: "text",
+                                            name: "productId",
+                                            header: "Product ID",
+                                            sort: "string",
+                                        },
+                                        {
+                                            id: "namaProduk",
+                                            width: 200,
+                                            view: "text",
+                                            name: "namaProduk",
+                                            sort: "string",
+                                            header: "Product Name"
+                                        },
+                                        {
+                                            id: "barcodeEAN",
+                                            width: 200,
+                                            view: "text",
+                                            name: "barcodeEAN",
+                                            sort: "string",
+                                            header: "Barcode"
+                                        },
+                                        {
+                                            id: "kategoriProduct",
+                                            header: "Kategori",
+                                            editor: "text",
+                                            name: 'kategoriProduct',
+                                            sort: "string",
+                                            template: function (obj) {
+                                                if (obj.klasifikasi && obj.klasifikasi.namaKategori) {
+                                                    return obj.klasifikasi.namaKategori;
+                                                }
+                                            }
+                                        },
+                                        {
+                                            id: "ABCProduct",
+                                            header: "ABC Class",
+                                            editor: "text",
+                                            name: 'ABCProduct',
+                                            sort: "string",
+                                            template: function (obj) {
+                                                if (obj.klasifikasi && obj.klasifikasi.analisisABC) {
+                                                    return obj.klasifikasi.analisisABC;
+                                                }
+                                            }
+                                        },
+                                        {
+                                            id: "unitSimpan",
+                                            header: "Store Unit",
+                                            editor: "text",
+                                            name: "unitSimpan",
+                                            sort: "string",
+                                            template: function (obj) {
+                                                if (obj.satuan && obj.satuan.unitSimpan) {
+                                                    return obj.satuan.unitSimpan
+                                                }
+                                            }
+                                        },
+                                        {
+                                            id: "statusProduct",
+                                            header: "Status",
+                                            name: "statusProduct",
+                                            sort: "string",
+                                            template: function (obj) {
+                                                return obj.statusKontrol && obj.statusKontrol.status
+                                            }
+                                        },
+                                        {
+                                            id: "ActionProduct",
+                                            header: "More Options",
+                                            width: 140,
+                                            template: function (obj) {
+                                                return `<button onclick="Detailfunction('${obj._id}')" style="margin-top:10px !important;">Detail</button>`
+                                            }
+                                        },
+                                    ],
+                                    url: "/api/product",
+                                }
+                            ]
+
+                        },
+                        {
+                        }
+                        ]
+                    },
+                    ]
+                },
+                {
+                    view: "toolbar",
+                    css: "showFooter",
+                    padding: 10,
+                    elements: [{},
+                    {},
+                    {
+                        view: "label",
+                        label: "",
+                        css: "logo",
+                        width: 175,
+                        height: 30,
+                        type: "webix_secondary"
+                    }
+                    ]
+                }
+                ]
+            });
+
+            var CreateModalBox = {
+                paddingX: 10,
+                rows: [
+                    {
+                        view: "form",
+                        scroll: "y",
+                        id: "productForm",
+                        rules: {
+                            "namaProduk": webix.rules.isNotEmpty,
+                            "barcodeEAN": webix.rules.isNotEmpty,
+                            "logistik.referensiDimensiUnitSimpanCM_PLT": webix.rules.isDimension,
+                            "deskripsi": webix.rules.isNotEmpty,
+                            "merk": webix.rules.isNotEmpty,
+                            "satuan.unitJual": webix.rules.isNotEmpty,
+                            "satuan.unitSimpan": webix.rules.isNotEmpty,
+                        },
+                        elements: [
+                            { view: "text", name: "_id", hidden: true },
+                            { view: "text", labelWidth: 270, label: "Product Name", name: "namaProduk", placeholder: "Insert the product name", required: true, invalidMessage: "Product name is required" },
+                            { view: "text", labelWidth: 270, label: "Barcode", name: "barcodeEAN", placeholder: "Insert product Barcode", required: true, invalidMessage: "Barcode is required" },
+                            { view: "textarea", labelWidth: 270, label: "Description", name: "deskripsi", placeholder: "Insert product description", required: true, invalidMessage: "Description is required", height: 100 },
+                            { view: "text", labelWidth: 270, label: "Product Brand", name: "merk", placeholder: "Insert product brand", required: true, invalidMessage: "Brand is required" },
+                            {
+                                view: "select", labelWidth: 270, label: "Category", name: "klasifikasi.namaKategori",
+                                options: categoryOptions,
+                                placeholder: "Insert product category", required: true, invalidMessage: "Category is required"
+                            },
+                            {
+                                view: "select", labelWidth: 270, label: "ABC Analytics", name: "klasifikasi.analisisABC", placeholder: "Insert product brand",
+                                options: abcOptions,
+                                required: true, invalidMessage: "ABC class is required"
+                            },
+                            { view: "text", labelWidth: 270, label: "Unit Type", name: "satuan.unitJual", placeholder: "Insert Unit Type", required: true, invalidMessage: "Unit type is required" },
+                            { view: "text", labelWidth: 270, label: "Unit Store Type", name: "satuan.unitSimpan", placeholder: "Insert Unit Store", required: true, invalidMessage: "Unit store type is required" },
+
+
+                            { view: "text", labelWidth: 270, label: "Reference Unit dimension CM (LWH)", name: "logistik.referensiDimensiUnitSimpanCM_PLT", placeholder: "e.g., 100x50x30", invalidMessage: "Must be in LxWxH format (e.g., 100x50x30)", required: true },
+                            {}
+                        ]
+                    },
+                    {
+                        paddingY: 10,
+                        cols: [
+                            {
+                                view: "button", value: "Cancel",
+                                click: function () { $$('createProductModal').hide(); }
+                            },
+                            {
+                                view: "button", value: "Create data", css: "webix_primary",
+                                click: function () {
+                                    const form = $$('productForm');
+
+                                    if (!form.validate()) {
+                                        webix.message({ type: "error", text: "All fields must be inserted correctly!" });
+                                        return;
+                                    }
+                                    let values = form.getValues();
+                                    let sanitizedValues = sanitizeProductData(values);
+                                    webix.message({ text: "Sending Data", expire: 1000 });
+                                    webix.ajax()
+                                        .headers({ 'Content-Type': 'application/json' })
+                                        .post(
+                                            '/api/product/create', JSON.stringify(sanitizedValues),
+                                            function (text, data) {
+                                                const response = JSON.parse(text);
+                                                if (response.status === 'error') {
+                                                    webix.message({ type: "error", text: "Error " + response.text });
+                                                } else {
+                                                    webix.message('Data added successfully');
+                                                    $$('productTable').clearAll();
+                                                    $$('productTable').load('/api/product');
+                                                    $$('createProductModal').hide();
+                                                    $$('productInventoryTable').clearAll();
+                                                    $$('productInventoryTable').load('/api/product/inventory');
+                                                    $$('productLogDatatable').clearAll();
+                                                    $$('productLogDatatable').load('/api/product/log')
+                                                    allProductOptions.clearAll();
+                                                    allProductOptions.load("/api/product/options");
+                                                }
+                                            }
+                                        )
+                                }
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            var productLogModalBox = {
+                rows: [
+                    {
+                        view: "text",
+                        id: "datatableSearch",
+                        placeholder: "Search Anything",
+                        on: {
+                            "onTimedKeyPress": function () {
+                                var text = this.getValue().toLowerCase();
+                                $$('productLogDatatable').filter(customSearchFilter, text);
+                            }
+                        }
+                    },
+                    {
+                        view: "datatable",
+                        id: "productLogDatatable",
+                        scroll: "y",
+                        columns: [
+                            { id: '_id', width: 220, header: "id", name: "_id", sort: "string" },
+                            { id: "by", header: "by", name: "by", sort: "string" },
+                            { id: "action", header: "action", name: "action", sort: "string" },
+                            { id: "for", header: "for", name: "for", sort: "string", width: 120 },
+                            { id: "at", width: 270, header: "at", name: "at", sort: "date" }
+                        ],
+                        url: "/api/product/log",
+                    }
+                ]
+            };
+            var arrivalReportModalBox = {
+                width: 1140,
+                height: 650,
+                rows: [
+                    {
+                        view: "form",
+                        id: "arrivalReportForm",
+                        scroll: "y",
+                        elements: [
+                            {
+                                id: "arrivalId",
+                                name: "_id",
+                                hidden: true,
+                                view: "text",
+                            },
+                            {
+                                id: "arrivalPurchaseOrderNumber",
+                                name: "purchaseOrderNumber",
+                                view: "text",
+                                label: "Purchased Order Number",
+                                labelWidth: 200,
+                                required: true,
+                                invalidMessage: "Purchase order number is required"
+                            },
+                            {
+                                id: "supplierId",
+                                name: "supplierId",
+                                view: "richselect",
+                                label: "Supplier",
+                                options: "/api/suppliers/options",
+                                labelWidth: 200,
+                                required: true,
+                                invalidMessage: "Supplier is required"
+                            },
+                            {
+                                cols: [
+                                    {
+                                        view: "button",
+                                        value: "Add Item",
+                                        css: "webix_primary",
+                                        click: function () {
+                                            const datatable = $$("arrivalItemsDatatable");
+                                            const allItems = datatable.serialize();
+                                            const existingNumbers = new Set();
+                                            datatable.hideOverlay();
+                                            allItems.forEach(item => {
+                                                const num = parseInt(item.id.replace("ITM", ""), 10);
+                                                if (!isNaN(num)) {
+                                                    existingNumbers.add(num);
+                                                }
+                                            });
+                                            let nextNumber = 1;
+                                            while (existingNumbers.has(nextNumber)) {
+                                                nextNumber++;
+                                            }
+
+                                            datatable.add({
+                                                id: `ITM${nextNumber}`,
+                                                productId: "",
+                                                receivedQuantity: 0,
+                                                location: "",
+                                                "actualDimensionInCM_LWH": ""
+                                            });
+                                            $$('arrivalItemsDatatable').clearValidation();
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                id: "arrivalItemsDatatable",
+                                view: "datatable",
+                                editable: true,
+                                scrollY: true,
+                                height: 400,
+                                rules: {
+                                    "actualDimensionInCM_LWH": webix.rules.isDimension,
+                                    "receivedQuantity": isNotEmptyAndNotNegative
+                                },
+                                on: {
+                                    onBeforeEditStart: function (id) {
+                                        if (id.column !== "productId") return;
+
+                                        const datatable = this;
+                                        const currentRowId = id.row;
+                                        const usedIds = new Set();
+                                        datatable.eachRow(function (rowId) {
+                                            if (rowId === currentRowId) return;
+
+                                            const item = datatable.getItem(rowId);
+                                            if (item && item.productId) {
+                                                usedIds.add(item.productId);
+                                            }
+                                        });
+                                        allProductOptions.filter(function (option) {
+                                            return !usedIds.has(option.id);
+                                        });
+                                    },
+                                    onAfterEditStop: function () {
+                                        allProductOptions.filter();
+                                    },
+                                    onEditorChange: function () {
+                                        allProductOptions.filter();
+                                    }
+                                },
+                                columns: [
+                                    {
+                                        id: "batchID",
+                                        name: "id",
+                                        view: "text",
+                                        readonly: true,
+                                        template: function (obj) {
+                                            if (obj.id) {
+                                                return obj.id;
+                                            }
+                                        }
+                                    },
+                                    {
+                                        id: "productId",
+                                        name: "productId",
+                                        header: "Product ID",
+                                        width: 90,
+                                        editor: "richselect",
+                                        options: allProductOptions,
+                                        required: true
+                                    },
+                                    {
+                                        id: "receivedQuantity",
+                                        name: "receivedQuantity",
+                                        header: "Received Quantity",
+                                        width: 150,
+                                        editor: "text",
+                                        placeholder: "Insert Qty",
+                                        required: true,
+                                        invalidMessage: "please insert correctly!"
+                                    },
+                                    {
+                                        id: "location",
+                                        name: "location",
+                                        header: "Stored Location",
+                                        width: 150,
+                                        editor: "text",
+                                        required: true
+                                    },
+                                    {
+                                        id: "actualDimensionInCM_LWH",
+                                        name: "actualDimensionInCM_LWH",
+                                        header: "Actual Dimension in CM (LWH)",
+                                        editor: "text",
+                                        width: 225,
+                                        placeholder: "e.g., 100x50x30",
+                                        required: true,
+                                        invalidMessage: "please insert correctly!"
+                                    },
+                                    {
+                                        id: "actionButton",
+                                        name: "actionBtn",
+                                        header: "Action",
+                                        template: function (obj) {
+                                            return `<button onclick="arrivalDelBtn('${obj.id}')" style="margin-top:10px !important;">Delete</button>`
+                                        }
+                                    }
+                                ],
+                            },
+                            {
+                                cols: [
+                                    {
+                                        view: "button",
+                                        value: "cancel",
+                                        css: "webix_secondary",
+                                        click: function () {
+                                            arrivalReportWindow.hide();
+                                        }
+                                    },
+                                    {
+                                        view: "button",
+                                        value: "Submit Arrival Report",
+                                        css: "webix_primary",
+                                        click: function () {
+                                            const form = $$("arrivalReportForm");
+                                            const itemsTable = $$("arrivalItemsDatatable");
+                                            if (!form.validate()) {
+                                                webix.message({ type: "error", text: "All fields must be inserted correctly!" });
+                                                return;
+                                            }
+                                            if (itemsTable.count() === 0) {
+                                                webix.message({ type: "error", text: "You must add at least one item to the report." });
+                                                return;
+                                            }
+                                            let values = form.getValues();
+                                            let product = itemsTable.serialize();
+                                            values.product = product;
+                                            webix.ajax()
+                                                .headers({ 'Content-Type': 'application/json' })
+                                                .post("/api/arrival/report/create", JSON.stringify(values))
+                                                .then(function (res) {
+                                                    webix.message("Arrival report created successfully");
+                                                    $$("arrivalReportModal").hide();
+                                                    $$("arrivalItemsDatatable").clearAll();
+                                                    $$('arrivalLogDatatable').clearAll();
+                                                    $$('arrivalLogDatatable').load('/api/arrival/report');
+                                                    $$('productInventoryTable').clearAll();
+                                                    $$('productInventoryTable').load('/api/product/inventory');
+                                                })
+                                                .fail(function (err) {
+                                                    webix.message({ type: "error", text: "Error creating arrival report" });
+                                                });
+                                        }
+                                    },
+                                ]
+                            },
+                            {}
+                        ]
+                    }
+                ]
+            }
+
+            var detailModalBox = {
+                rows: [
+                    {
+                        view: "form",
+                        id: "detailProductForm",
+                        scroll: "y",
+                        labelWidth: 400,
+                        rules: {
+                            "namaProduk": webix.rules.isNotEmpty,
+                            "barcodeEAN": webix.rules.isNotEmpty,
+                            "logistik.referensiDimensiUnitSimpanCM_PLT": webix.rules.isDimension,
+                        },
+                        elements: [
+                            { labelWidth: 230, view: "text", label: "Product ID", name: "_id", readonly: true },
+                            { labelWidth: 230, view: "text", label: "Product Name", name: "namaProduk", required: true, invalidMessage: "Product name is required" },
+                            { labelWidth: 230, view: "text", label: "Barcode (EAN)", name: "barcodeEAN", required: true, invalidMessage: "Barcode is required" },
+                            { labelWidth: 230, view: "textarea", label: "Description", name: "deskripsi", height: 100, required: true, invalidMessage: " Description is required" },
+                            { labelWidth: 230, view: "text", label: "Brand", name: "merk" },
+                            {
+                                labelWidth: 230,
+                                view: "richselect",
+                                label: "Status",
+                                name: "statusKontrol.status",
+                                options: [{ "id": "1", "value": "Aktif" }, { "id": "2", "value": "Non-Aktif" }]
+                                , required: true
+                            },
+                            {
+                                labelWidth: 230,
+                                view: "richselect",
+                                label: "Category Name",
+                                name: "klasifikasi.namaKategori",
+                                options: categoryOptions
+                                , required: true
+                            },
+                            {
+                                labelWidth: 230,
+                                view: "richselect",
+                                label: "ABC Class",
+                                name: "klasifikasi.analisisABC",
+                                options: abcOptions,
+                                required: true
+                            },
+                            { labelWidth: 230, view: "text", label: "Sell Unit", name: "satuan.unitJual", required: true, invalidMessage: "Sell unit is required" },
+                            { labelWidth: 230, view: "text", label: "Store Unit", name: "satuan.unitSimpan", required: true, invalidMessage: "Store unit is required" },
+                            { labelWidth: 230, view: "text", label: "Reference Unit Dimension in CM", name: "logistik.referensiDimensiUnitSimpanCM_PLT", placeholder: "e.g., 100x50x30", invalidMessage: "Must be in LxWxH format", required: true, invalidMessage: "Dimension Reference is required" },
+                            {}
+                        ]
+                    },
+                    {
+                        padding: 10,
+                        cols: [
+                            //{% if Perm['stock management'] %}
+                            {
+                                view: "button",
+                                value: "Update",
+                                css: "webix_primary",
+                                click: function () {
+                                    const form = $$("detailProductForm");
+                                    if (!form.validate()) {
+                                        webix.message({ type: "error", text: "Please fix the form errors before updating." });
+                                        return;
+                                    }
+
+                                    let values = form.getValues();
+                                    let sanitizedValues = sanitizeProductData(values);
+
+                                    webix.ajax()
+                                        .headers({ 'Content-Type': 'application/json' })
+                                        .post("/api/product/update", JSON.stringify(sanitizedValues))
+                                        .then(function (res) {
+                                            webix.message("Product updated successfully");
+                                            $$("detailProductModal").hide();
+                                            $$("productTable").clearAll();
+                                            $$("productTable").load("/api/product");
+                                            $$('productLogDatatable').clearAll();
+                                            $$('productLogDatatable').load('/api/product/log');
+                                            allProductOptions.clearAll();
+                                            allProductOptions.load("/api/product/options");
+                                        })
+                                        .fail(function (err) {
+                                            webix.message({ type: "error", text: "Error updating product" });
+                                        });
+                                }
+                            },
+                            {
+                                view: "button",
+                                value: "Delete",
+                                css: "webix_danger",
+                                click: function () {
+                                    const form = $$("detailProductForm");
+                                    const id = form.getValues()._id;
+
+                                    webix.confirm({
+                                        title: "Delete Product?",
+                                        text: `Are you sure you want to delete product ${id}? This cannot be undone.`,
+                                        ok: "Yes, Delete",
+                                        cancel: "Cancel"
+                                    }).then(function () {
+                                        webix.ajax()
+                                            .headers({ 'Content-Type': 'application/json' })
+                                            .del("/api/product/delete", JSON.stringify({ "_id": id }))
+                                            .then(function (res) {
+                                                webix.message("Product deleted");
+                                                $$('productTable').clearAll();
+                                                $$('productTable').load('/api/product');
+                                                $$("detailProductModal").hide();
+                                                $$('productLogDatatable').clearAll();
+                                                $$('productLogDatatable').load('/api/product/log')
+                                                $$('productInventoryTable').clearAll();
+                                                $$('productInventoryTable').load('/api/product/inventory');
+                                                allProductOptions.clearAll();
+                                                allProductOptions.load("/api/product/options");
+                                            })
+                                            .fail(function (err) {
+                                                webix.message({ type: "error", text: "Error deleting product" });
+                                            });
+                                    });
+                                }
+                            },
+                            //{% endif %}
+                            {
+                                view: "button",
+                                value: "Cancel",
+                                click: function () {
+                                    $$("detailProductModal").hide();
+                                }
+                            }
+                        ]
+                    }
+                ]
+            };
+            var arrivalLogModalBox = {
+                view: "datatable",
+                id: "arrivalLogDatatable",
+                scroll: "y",
+                columns: [
+                    { id: '_id', width: 100, header: "id", name: "_id", sort: "string" },
+                    { id: "purchaseOrderNumber", width: 200, header: "Purchase Order Number", name: "purchaseOrderNumber", sort: "string" },
+                    { id: "supplierId", width: 120, header: "Supplier ID", name: "supplierId", sort: "string" },
+                    { id: "receivedBy", width: 140, header: "Received By", name: "receivedBy", sort: "string" },
+                    { id: "arrivalDate", width: 200, header: "Arrival Date", name: "arrivalDate", sort: "date" },
+                    {
+                        id: "itemsButton",
+                        header: "Items",
+                        template: function (obj) {
+                            return `<button onclick="viewArrivalItems('${obj._id}')">View Items</button>`
+                        }
+                    }
+                ],
+                url: "/api/arrival/report"
+            }
+            var arrivalItemBox = {
+                view: "datatable",
+                id: "arrivalItem",
+                scroll: "y",
+                editable: true,
+                columns: [
+                    { id: "id", header: "Batch ID", readonly: true, sort: "string", width: 150 },
+                    { id: "productId", header: "Product ID", readonly: true, sort: "string" },
+                    { id: "receivedQuantity", header: "Received Quantity", readonly: true, sort: "int", width: 150 },
+                    { id: "location", header: "Received Stored", readonly: true, sort: "string", width: 150 },
+                    { id: "actualDimensionInCM_LWH", header: "Item Dimension", readonly: true, sort: "string", width: 170 }
+                ]
+            }
+            var shipmentModalBox = {
+                view: "form",
+                id: "shipmentForm",
+                scroll: 'y',
+                elements: [
+                    {
+                        view: "text",
+                        id: "shipmentId",
+                        name: "_id",
+                        hidden: true
+                    },
+                    {
+                        view: "text",
+                        id: "shipmentOrderNumber",
+                        label: "Sales Order Number",
+                        name: "salesOrderNumber",
+                        labelWidth: 200,
+                        required: true,
+                        invalidMessage: "Sales order number is required"
+                    },
+                    {
+                        cols: [
+                            {
+                                id: "retailId",
+                                name: "retailId",
+                                view: "richselect",
+                                label: "Retail ID",
+                                options: "/api/retail/options",
+                                labelWidth: 200,
+                                required: true,
+                                on: {
+                                    onChange: function () {
+                                        var selectedId = this.getValue();
+                                        if (selectedId === "") {
+                                            return;
+                                        }
+                                        webix.ajax()
+                                            .get("/api/retail/name?id=" + selectedId)
+                                            .then(function (res) {
+                                                var data = res.json();
+                                                $$("retailName").setValue(data);
+                                            })
+                                            .fail(function (err) {
+                                                webix.message({ type: "error", text: err });
+                                            });
+                                    }
+                                }
+                            },
+                            {
+                                id: "retailName",
+                                name: "retailName",
+                                view: "text",
+                                value: "",
+                                readonly: true,
+                            }
+                        ]
+
+                    },
+                    {
+                        cols: [
+                            {
+                                view: "button",
+                                value: "Add Item",
+                                css: "webix_primary",
+                                click: function () {
+                                    const datatable = $$("shipmentItemsDatatable");
+                                    const allItems = datatable.serialize();
+                                    const existingNumbers = new Set();
+                                    datatable.hideOverlay();
+                                    allItems.forEach(item => {
+                                        const num = parseInt(item.id.replace("ITM", ""), 10);
+                                        if (!isNaN(num)) {
+                                            existingNumbers.add(num);
+                                        }
+                                    });
+                                    let nextNumber = 1;
+                                    while (existingNumbers.has(nextNumber)) {
+                                        nextNumber++;
+                                    }
+
+                                    datatable.add({
+                                        id: `ITM${nextNumber}`,
+                                        productId: "",
+                                        shippedQuantity: 0,
+                                        "packageDimensionInCM_LWH": ""
+                                    });
+                                    $$('shipmentItemsDatatable').clearValidation();
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        id: "shipmentItemsDatatable",
+                        view: "datatable",
+                        editable: true,
+                        scrollY: true,
+                        height: 400,
+                        rules: {
+                            "packageDimensionInCM_LWH": webix.rules.isDimension,
+                            "shippedQuantity": isNotEmptyAndNotNegative
+                        },
+                        on: {
+                            onBeforeEditStart: function (id) {
+                                if (id.column !== "productId") return;
+
+                                const datatable = this;
+                                const currentRowId = id.row;
+                                const usedIds = new Set();
+                                datatable.eachRow(function (rowId) {
+                                    if (rowId === currentRowId) return;
+
+                                    const item = datatable.getItem(rowId);
+                                    if (item && item.productId) {
+                                        usedIds.add(item.productId);
+                                    }
+                                });
+                                allProductOptions.filter(function (option) {
+                                    return !usedIds.has(option.id);
+                                });
+                            },
+                            onAfterEditStop: function () {
+                                allProductOptions.filter();
+                            },
+                            onEditorChange: function () {
+                                allProductOptions.filter();
+                            }
+                        },
+                        columns: [
+                            {
+                                id: "batchID",
+                                name: "id",
+                                view: "text",
+                                readonly: true,
+                                template: function (obj) {
+                                    if (obj.id) {
+                                        return obj.id;
+                                    }
+                                }
+                            },
+                            {
+                                id: "productId",
+                                name: "productId",
+                                header: "Product ID",
+                                width: 90,
+                                editor: "richselect",
+                                options: allProductOptions,
+                                required: true
+                            },
+                            {
+                                id: "shippedQuantity",
+                                name: "shippedQuantity",
+                                header: "Shipped Quantity",
+                                width: 150,
+                                editor: "text",
+                                placeholder: "Insert Qty",
+                                required: true,
+                                invalidMessage: "please insert correctly!"
+                            },
+                            {
+                                id: "packageDimensionInCM_LWH",
+                                name: "packageDimensionInCM_LWH",
+                                header: "Package Dimension in CM (LWH)",
+                                editor: "text",
+                                width: 225,
+                                required: true,
+                            },
+                            {
+                                id: "actionButton",
+                                name: "actionBtn",
+                                header: "Action",
+                                template: function (obj) {
+                                    return `<button onclick="shipmentDelBtn('${obj.id}')" style="margin-top:10px !important;">Delete</button>`
+                                }
+                            }
+                        ],
+                    },
+                    {
+                        margin: 5, cols: [
+                            {
+                                view: "button", value: "Cancel", css: "webix_secondary", click: function () {
+                                    $$("shipmentModal").hide();
+                                }
+                            },
+                            {
+                                view: "button", value: "Create Shipment", css: "webix_primary", click: function () {
+                                    $$("shipmentItemsDatatable").editStop();
+
+                                    // require at least one item
+                                    var itemsTable = $$("shipmentItemsDatatable");
+                                    if (itemsTable.count() === 0) {
+                                        webix.message({ type: "error", text: "You must add at least one item." });
+                                        return;
+                                    }
+                                    if (typeof itemsTable.validate === "function" && !itemsTable.validate()) {
+                                        webix.message({ type: "error", text: "Please fix item errors in the table." });
+                                        return;
+                                    }
+                                    var items = itemsTable.serialize();
+                                    for (var i = 0; i < items.length; i++) {
+                                        var it = items[i];
+                                        if (!it.productId || !it.shippedQuantity || isNaN(Number(it.shippedQuantity)) || Number(it.shippedQuantity) < 0) {
+                                            webix.message({ type: "error", text: "Invalid data in shipment items (productId/quantity)." });
+                                            return;
+                                        }
+                                    }
+                                    let values = $$("shipmentForm").getValues();
+                                    let product = $$("shipmentItemsDatatable").serialize();
+                                    values.product = product;
+                                    if ($$('shipmentForm').validate()) {
+                                        webix.message("sending data");
+                                        webix.ajax()
+                                            .headers({ 'Content-Type': 'application/json' })
+                                            .post("/api/shipments/createShipment", JSON.stringify(values))
+                                            .then(function (res) {
+                                                webix.message("Shipment created successfully");
+                                                $$("shipmentModal").hide();
+                                                $$('productInventoryTable').clearAll();
+                                                $$('productInventoryTable').load('/api/product/inventory');
+                                                $$('shipmentLogDatatable').clearAll();
+                                                $$('shipmentLogDatatable').load('/api/shipments/log');
+                                            })
+                                            .fail(function (xhr) {
+                                                webix.message({ type: "error", text: "Shipment creation failed" });
+                                            });
+                                    }
+                                    else {
+                                        webix.message("Tolong isi seluruh text field!");
+                                        return;
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            };
+            var shipmentLogModalBox = {
+                view: "datatable",
+                id: "shipmentLogDatatable",
+                scroll: "y",
+                columns: [
+                    {
+                        id: "_id",
+                        width: 120,
+                        header: "shipment ID",
+                        sort: "string"
+                    },
+                    {
+                        id: "salesOrderNumber",
+                        width: 200,
+                        header: "Sales Order Number",
+                        name: "salesOrderNumber",
+                        sort: "string"
+                    },
+                    {
+                        id: "retailId",
+                        width: 100,
+                        header: "Retail ID",
+                        name: "retailId",
+                        sort: "string"
+                    },
+                    {
+                        id: "address",
+                        header: "Address",
+                        sort: "string",
+                        name: "address",
+                        width: 200
+                    },
+                    {
+                        id: "retailName",
+                        header: "Retail Name",
+                        sort: "string"
+                    },
+                    {
+                        id: "createdBy",
+                        header: "Created By",
+                        sort: "string"
+                    },
+                    {
+                        id: "shippedAt",
+                        header: "Shipped At",
+                        sort: "date",
+                        width: 230,
+                    },
+                    {
+                        id: "itemsButton",
+                        header: "Items",
+                        template: function (obj) {
+                            return `<button onclick="viewShipmentItems('${obj._id}')">View Items</button>`
+                        }
+                    }
+                ],
+                url: "/api/shipments/log"
+            }
+            var shipmentItemModalBox = {
+                view: "datatable",
+                id: "shipmentItemModalDatatable",
+                scroll: "y",
+                editable: true,
+                columns: [
+                    { id: "id", header: "Batch ID", readonly: true, sort: "string", width: 150 },
+                    { id: "productId", header: "Product ID", readonly: true, sort: "string" },
+                    { id: "shippedQuantity", header: "Shipped Quantity", readonly: true, sort: "int", width: 150 },
+                    { id: "packageDimensionInCM_LWH", header: "Package Dimension", readonly: true, sort: "string", width: 170 }
+                ]
+            }
+            var formWindow = webix.ui({
+                move: true,
+                responsive: true,
+                view: "window",
+                id: "createProductModal",
+                modal: true,
+                position: "center",
+                head: "Create Product",
+                body: CreateModalBox,
+                width: 700,
+                height: 600,
+                close: true,
+                on: {
+                    onHide: function () {
+                        $$('productForm').clearValidation();
+                        $$('productForm').clear();
+                    }
+                }
+            });
+            var logWindow = webix.ui({
+                responsive: true,
+                view: "window",
+                id: "productLogModal",
+                modal: true,
+                close: true,
+                position: "center",
+                head: "Product Log",
+                body: productLogModalBox,
+                width: 820,
+                height: 700,
+                move: true
+            })
+            var detailWindow = webix.ui({
+                move: true,
+                responsive: true,
+                view: "window",
+                id: "detailProductModal",
+                modal: true,
+                close: true,
+                position: "center",
+                head: "Edit Product Details",
+                body: detailModalBox,
+                width: 625,
+                height: 650,
+                on: {
+                    onHide: function () {
+                        $$('detailProductForm').clearValidation();
+                    }
+                }
+            })
+            webix.ui.fullScreen();
+            if ($$('log_form')) {
+                $$('log_form').clear();
+            };
+            if ($$("mainSidebar")) {
+                $$("mainSidebar").select("dashboard");
+
+                var sidebarRoutes = {
+                    dashboard: "/",
+                    users_management: "/management/users",
+                    supplyAndRetailManagement: "/retail-supply"
+                };
+                $$("mainSidebar").attachEvent("onAfterSelect", function (id) {
+                    var target = sidebarRoutes[id] || "/";
+                    window.location.href = target;
+                    return true;
+                });
+            };
+            function isNotEmptyAndNotNegative(value) {
+                var isPresent = webix.rules.isNotEmpty(value);
+                var isPositiveOrZero = webix.rules.isNumber(value) && (parseFloat(value) >= 0)
+                return isPresent && isPositiveOrZero;
+            }
+            function customSearchFilter(item, value) {
+                var _list = ['_id', 'by', 'action', 'for', 'at'];
+                if (!value) {
+                    return true;
+                }
+                for (var i = 0; i < _list.length; i++) {
+                    var _listId = _list[i];
+                    var _listVal = (item[_listId] || "").toString().toLowerCase();
+                    if (_listVal.indexOf(value) !== -1) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            function searchFilterProduct(item, value) {
+                if (!value) return true;
+                value = value.toLowerCase();
+
+
+                const valuesToSearch = [
+                    item._id,
+                    item.namaProduk,
+                    (item.klasifikasi && item.klasifikasi.namaKategori),
+                    (item.klasifikasi && item.klasifikasi.analisisABC),
+                    (item.satuan && item.satuan.unitSimpan),
+                    (item.statusKontrol && item.statusKontrol.status)
+                ];
+                for (let i = 0; i < valuesToSearch.length; i++) {
+                    let actualValue = (valuesToSearch[i] || "").toString().toLowerCase();
+
+                    if (actualValue.indexOf(value) !== -1) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            var arrivalReportWindow = webix.ui({
+                move: true,
+                responsive: true,
+                view: "window",
+                id: "arrivalReportModal",
+                modal: true,
+                close: true,
+                position: "center",
+                head: "Arrival Report",
+                body: arrivalReportModalBox,
+                width: 860,
+                height: 700,
+                on: {
+                    onHide: function () {
+                        $$("arrivalItemsDatatable").showOverlay("No items added yet.");
+                        $$('arrivalReportForm').clearValidation();
+                        $$('arrivalReportForm').clear();
+                        $$("arrivalItemsDatatable").clearAll();
+                    }
+                }
+            })
+            var arrivalLogWindow = webix.ui({
+                responsive: true,
+                view: "window",
+                id: "arrivalLogModal",
+                modal: true,
+                close: true,
+                position: "center",
+                head: "Arrival Log",
+                body: arrivalLogModalBox,
+                width: 900,
+                height: 600,
+                move: true
+            })
+            var arrivalItemWindow = webix.ui({
+                responsive: true,
+                view: "window",
+                id: "arrivalLogModalItem",
+                modal: true,
+                close: true,
+                position: "center",
+                head: "Items",
+                body: arrivalItemBox,
+                width: 700,
+                height: 600,
+                move: true,
+            })
+            var shipmentModalWindow = webix.ui({
+                view: "window",
+                id: "shipmentModal",
+                width: 700,
+                height: 700,
+                position: "center",
+                modal: true,
+                head: "Shipment Details",
+                body: shipmentModalBox,
+                move: true,
+                close: true,
+                on: {
+                    onHide: function () {
+                        $$("shipmentItemsDatatable").showOverlay("No items added yet.");
+                        $$('shipmentForm').clear();
+                        $$("shipmentItemsDatatable").clearAll();
+                    }
+                }
+            })
+            var shipmentLogWindow = webix.ui({
+                responsive: true,
+                view: "window",
+                id: "shipmentLogModal",
+                modal: true,
+                close: true,
+                position: "center",
+                head: "Shipment Log",
+                body: shipmentLogModalBox,
+                width: 1170,
+                height: 600,
+                move: true
+            })
+            var shipmentItemWindow = webix.ui({
+                responsive: true,
+                view: "window",
+                id: "shipmentItemModal",
+                modal: true,
+                close: true,
+                position: "center",
+                head: "Items",
+                body: shipmentItemModalBox,
+                width: 600,
+                height: 600,
+                move: true,
+            })
+        });
+    </script>
+</body>
+
+</html>

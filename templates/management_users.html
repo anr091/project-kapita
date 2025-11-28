@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.webix.com/edge/webix.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet"
+        type="text/css">
+    <link rel="stylesheet" href="/static/custom.css">
+    <script src="https://cdn.webix.com/edge/webix.js" type="text/javascript"></script>
+    <title>{{title}}</title>
+</head>
+
+<body>
+    <script>
+        var updateRole = false;
+        webix.ready(function () {
+            webix.attachEvent("onAjaxError", function (xhr) {
+                if (xhr.status === 401) {
+                    window.location.href = "/";
+                }
+            });
+            webix.ui({
+                responsive: true,
+                view: "layout",
+                type: "clean",
+                rows: [{
+                    view: "toolbar",
+                    height: 65,
+                    padding: 10,
+                    elements: [{
+                        view: "label",
+                        label: "",
+                        css: "logo",
+                        width: 175,
+                        height: 50,
+                        type: "webix_secondary",
+                        click: function () {
+                            window.location.href = "/";
+                        }
+                    },
+                    {
+                        width: 1250
+                    },
+                    {
+                        view: "label",
+                        width: 170,
+                        label: "Hello! {{name}}",
+                        autowidth: true
+                    },
+                    {
+                        view: "label",
+                        width: 100,
+                        label: "As {{role}}",
+                        labelWidth: "auto"
+                    },
+                    {
+                        view: "button",
+                        width: 130,
+                        label: " Logout",
+                        click: function () {
+                            window.location.href = '/users/logout';
+                        }
+                    },
+                    {}
+
+                    ]
+                },
+                {
+                    cols: [{
+                        view: "sidebar",
+                        id: "mainSidebar",
+                        css: "sidebar-bg",
+                        collapsed: true,
+                        width: 250,
+                        value: "dashboard",
+                        data: [{
+                            id: "dashboard",
+                            icon: "mdi mdi-home",
+                            value: "Dashboard"
+                        }
+                            //{% if Perm['retail and shipment'] %}
+                            ,
+                        {
+                            id: "supplyAndRetailManagement",
+                            icon: "mdi mdi-city",
+                            value: "Supply and Retail Management",
+                        }
+                            // {% endif %}
+                            // {% if Perm['account management'] %}
+                            ,
+                        {
+                            id: "users_management",
+                            icon: "mdi mdi-account-supervisor",
+                            value: "Users management"
+                        },
+                            // {% endif %}
+                        ]
+                    },
+                    {
+                        type: "clean",
+                        paddingX: 30,
+                        rows: [{
+                            height: 70,
+                            cols: [{
+                                type: "clean",
+                                template: "<H1>{{title}}</H1>",
+                                width: 800,
+                            },
+                            {
+                                width: 260
+                            },
+                            {
+                                type: "clean",
+                                view: "label",
+                                id: "helpBtn",
+                                label: "",
+                                css: "webix_transparent helpBtnCss",
+                                width: 35,
+                                click: function () {
+                                    webix.alert({
+                                        title: "User Management Help",
+                                        width: 400,
+                                        text: `<b>Editing User Data:</b><br>
+                                                        - To edit user data, double click on the desired cell in the table.<br><br>
+                                                        <b>Creating New User:</b><br>
+                                                        - Fill in all fields in the 'Create User' form and click 'Add user' to add a new user.<br><br>
+                                                        <b>Actions:</b><br>
+                                                        - Use the 'Delete' button to remove a user.<br>
+                                                        - Use the 'Reset Password' button to reset a user's password.`
+                                    });
+                                }
+                            }
+                            ]
+                        },
+                        {
+                            height: 700,
+                            type: "clean",
+                            cols: [{
+                                view: "datatable",
+                                id: "myTable",
+                                editable: true,
+                                editaction: "dblclick",
+                                autoConfig: true,
+                                width: 1090,
+                                save: "/users/api/update",
+                                columns: [{
+                                    id: "_id",
+                                    header: "ID",
+                                    sort: "string"
+                                },
+                                {
+                                    id: "namaDepan",
+                                    header: "First Name",
+                                    editor: "text",
+                                    sort: "string"
+                                },
+                                {
+                                    id: "namaBelakang",
+                                    header: "Last Name",
+                                    editor: "text",
+                                    sort: "string"
+                                },
+                                {
+                                    id: "email",
+                                    header: "Email",
+                                    width: 230,
+                                    editor: "text",
+                                    sort: "string"
+                                },
+                                {
+                                    id: "noTelp",
+                                    header: "Phone Number",
+                                    width: 120,
+                                    editor: "text",
+                                    type: "int",
+                                    pattern: {
+                                        mask: "####-####-#####"
+                                    },
+                                    validate: function (value) {
+
+                                        return value
+                                            .length >= 10 &&
+                                            /^\d+$/.test(
+                                                value
+                                            );
+                                    },
+                                    sort: "string"
+                                },
+
+                                {
+                                    id: "status",
+                                    header: "Status",
+                                    editor: "select",
+                                    options: ["active",
+                                        "non-active"
+                                    ],
+                                    sort: "string"
+                                },
+                                {
+                                    id: "role",
+                                    header: "Position",
+                                    editor: "richselect",
+                                    collection: "/users/api/rolesSelect",
+                                    sort: "string"
+                                },
+                                {
+                                    id: "lastLogin",
+                                    header: "Last Login",
+                                    width: 220,
+                                    sort: "date"
+                                },
+                                {
+                                    id: "delBtn",
+                                    header: "Action",
+                                    width: 200,
+                                    template: function (obj) {
+                                        return `<button onclick="deleteUser('${obj._id}')" style="margin-top:10px !important;">Delete</button> <button onclick="resetPassword('${obj._id}')" style="margin-top:10px !important;">Reset Password</button>`;
+                                    }
+                                }
+                                ],
+                                url: "/users/api/users",
+                                rules: {
+
+                                    "email": function (value) {
+
+                                        if (!webix.rules.isNotEmpty(
+                                            value))
+                                            return false;
+                                        return webix.rules.isEmail(
+                                            value);
+                                    },
+                                    "noTelp": function (value) {
+
+                                        return webix.rules
+                                            .isNotEmpty(value) && !
+                                            isNaN(value);
+                                    }
+                                },
+                                on: {
+
+                                    "onValidationError": function (id,
+                                        obj, value) {
+                                        webix.message({
+                                            type: "error",
+                                            text: "Please Imput data correctly"
+                                        });
+                                    }
+                                }
+
+                            },
+                            {
+                                paddingX: 10,
+                                height: 500,
+                                rows: [{
+                                    view: "label",
+                                    label: "Create User",
+                                    size: 30
+                                },
+                                {
+                                    cols: [{
+                                        view: "form",
+                                        id: "userCreatorForm",
+                                        width: 700,
+                                        elements: [{
+                                            view: "text",
+                                            label: "First Name",
+                                            labelWidth: 120,
+                                            name: "namaDepan",
+                                            placeholder: "Insert First Name",
+                                            required: true
+                                        },
+                                        {
+                                            view: "text",
+                                            label: "Nama Belakang",
+                                            labelWidth: 120,
+                                            name: "namaBelakang",
+                                            placeholder: "Insert Last Name",
+                                            required: true
+                                        },
+
+                                        {
+                                            id: "emailCreate",
+                                            view: "text",
+                                            label: "Email",
+                                            labelWidth: 120,
+                                            name: "email",
+                                            placeholder: "Insert Email",
+                                            required: true
+                                        },
+                                        {
+                                            view: "text",
+                                            label: "Phone Number",
+                                            labelWidth: 120,
+                                            name: "noTelp",
+                                            placeholder: "eg. 0812345678901",
+                                            required: true,
+                                            attributes: {
+                                                maxlength: 13
+                                            }
+                                        },
+                                        {
+                                            view: "text",
+                                            type: "password",
+                                            labelWidth: 120,
+                                            label: "Password",
+                                            name: "password",
+                                            placeholder: "Insert Password",
+                                            required: true
+                                        },
+                                        {
+                                            view: "richselect",
+                                            label: "Roles",
+                                            labelWidth: 120,
+                                            name: "roles",
+                                            options: "/users/api/rolesSelect",
+                                            id: "roleSelectField",
+                                            height: 35,
+                                            required: true,
+                                            value: "",
+                                            placeholder: "Select Position"
+                                        },
+                                        {
+                                            margin: 5,
+                                            cols: [
+                                                {
+                                                    view: "button",
+                                                    value: "Cancel",
+                                                    click: function () {
+                                                        $$('userCreatorForm')
+                                                            .clear();
+                                                    }
+                                                },
+                                                {
+                                                    id: "createBtn",
+                                                    view: "button",
+                                                    value: "Add user",
+                                                    css: "webix_primary",
+                                                    click: function () {
+                                                        const
+                                                            form =
+                                                                $$(
+                                                                    'userCreatorForm');
+                                                        if (!
+                                                            form
+                                                                .validate()
+                                                        ) {
+
+                                                            webix
+                                                                .message({
+                                                                    type: "error",
+                                                                    text: "Semua field wajib diisi dengan format yang benar."
+                                                                });
+                                                            return;
+                                                        }
+
+
+                                                        const
+                                                            values =
+                                                                form
+                                                                    .getValues();
+
+                                                        webix
+                                                            .message({
+                                                                text: "Mengirim data...",
+                                                                expire: 1000
+                                                            });
+
+                                                        webix
+                                                            .ajax()
+                                                            .headers({
+                                                                'Content-Type': 'application/json'
+                                                            })
+                                                            .post(
+                                                                '/users/api/register',
+                                                                JSON
+                                                                    .stringify(
+                                                                        values
+                                                                    ),
+                                                                function (
+                                                                    text,
+                                                                    data
+                                                                ) {
+
+                                                                    const
+                                                                        response =
+                                                                            JSON
+                                                                                .parse(
+                                                                                    text
+                                                                                );
+
+                                                                    if (response
+                                                                        .status ===
+                                                                        "error"
+                                                                    ) {
+
+                                                                        webix
+                                                                            .message({
+                                                                                type: "error",
+                                                                                text: "ERROR: " +
+                                                                                    response
+                                                                                        .text
+                                                                            });
+                                                                    } else {
+
+                                                                        webix
+                                                                            .message(
+                                                                                'Data successfully added'
+                                                                            );
+                                                                        form
+                                                                            .clear();
+
+                                                                        $$('myTable')
+                                                                            .clearAll();
+                                                                        $$('myTable')
+                                                                            .load(
+                                                                                "/users/api/users"
+                                                                            );
+                                                                    }
+                                                                }, {
+
+                                                                error: function (
+                                                                    text,
+                                                                    data,
+                                                                    xhr
+                                                                ) {
+                                                                    webix
+                                                                        .message({
+                                                                            type: "error",
+                                                                            text: "Connection server error."
+                                                                        });
+                                                                }
+                                                            }
+                                                            );
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                        ],
+
+                                        rules: {
+
+                                            "email": function (
+                                                value
+                                            ) {
+
+                                                if (!
+                                                    webix
+                                                        .rules
+                                                        .isNotEmpty(
+                                                            value
+                                                        )
+                                                )
+                                                    return false;
+
+                                                return webix
+                                                    .rules
+                                                    .isEmail(
+                                                        value
+                                                    );
+                                            },
+
+                                            "noTelp": function (
+                                                value
+                                            ) {
+                                                const cleanedValue = String(value).replace(/[^0-9]/g, '');
+                                                console.log(cleanedValue);
+                                                return webix.rules.isNotEmpty(value) && !isNaN(cleanedValue) && cleanedValue.length >= 10;
+                                            },
+                                            "roles": webix
+                                                .rules
+                                                .isNotEmpty
+                                        }
+                                    }]
+                                },
+                                {
+                                    cols: [
+                                        {
+                                            view: "datatable",
+                                            id: "rolesTable",
+                                            scroll: "y",
+                                            columns: [
+                                                {
+                                                    id: "_id",
+                                                    view: "text",
+                                                    header: "Role ID",
+                                                    width: 50
+                                                },
+                                                {
+                                                    id: "role-name",
+                                                    view: "text",
+                                                    header: "Role Name"
+                                                },
+                                                {
+                                                    id: "EditRole",
+                                                    header: "Actions",
+                                                    template: function (obj) {
+                                                        return `<button onclick="EditRole('${obj._id}')" style="margin-top:10px !important;">Edit Role</button> <button onclick="DeleteRole('${obj._id}')" style="margin-top:10px !important;">Delete Role</button>`;
+                                                    },
+                                                    width: 180
+                                                }
+                                            ],
+                                            url: "/api/roles"
+                                        },
+                                        {
+                                            rows: [{
+                                                view: "form",
+                                                id: "RolesForm",
+                                                complexData: true,
+                                                elements: [
+                                                    {
+                                                        id: "_id",
+                                                        name: "_id",
+                                                        view: "text",
+                                                        hidden: true
+                                                    },
+                                                    {
+                                                        id: "newRoleName",
+                                                        name: "role-name",
+                                                        view: "text",
+                                                        label: "New Roles",
+                                                        placeholder: "Input the new roles",
+                                                        required: true,
+                                                        labelWidth: 100
+                                                    },
+
+                                                    {
+                                                        cols: [
+                                                            {
+                                                                view: "button",
+                                                                id: "CancelRoleBtn",
+                                                                value: "Cancel",
+                                                                css: "webix_secondary",
+                                                                click: function () {
+                                                                    $$('RolesForm').clear();
+                                                                    $$('addRoleBtn').setValue("Add role");
+                                                                    updateRole = false;
+                                                                    console.log(updateRole);
+                                                                }
+                                                            },
+                                                            {
+                                                                view: "button",
+                                                                id: "addRoleBtn",
+                                                                value: "Add role",
+                                                                css: "webix_primary",
+                                                                click: function () {
+                                                                    const form = $$('RolesForm');
+                                                                    if (!form.validate()) {
+                                                                        webix.message({
+                                                                            type: "error",
+                                                                            text: "All fields must be filled correctly."
+                                                                        })
+                                                                        return;
+                                                                    }
+                                                                    const values = form.getValues();
+                                                                    console.log(updateRole);
+                                                                    if (updateRole == true) {
+                                                                        webix.message({
+                                                                            text: "Updating role data",
+                                                                            expire: 1000
+                                                                        })
+                                                                        webix.ajax()
+                                                                            .headers({
+                                                                                'Content-Type': 'application/json'
+                                                                            })
+                                                                            .patch(
+                                                                                '/api/roles/update', JSON.stringify(values), {
+                                                                                success: function (text, data, xhr) {
+                                                                                    let response = data.json();
+                                                                                    if (response.status === "ok") {
+                                                                                        webix.message(response.message)
+                                                                                    } else {
+                                                                                        webix.message({
+                                                                                            type: "error",
+                                                                                            text: response.message
+                                                                                        })
+                                                                                    }
+                                                                                    updateRole = false;
+                                                                                    updateTable();
+                                                                                },
+                                                                                error: function (text, data, xhr) {
+                                                                                    let response = data.json();
+                                                                                    webix.message({
+                                                                                        type: "error",
+                                                                                        text: response.message
+                                                                                    });
+                                                                                }
+                                                                            }
+                                                                            )
+                                                                        $$('addRoleBtn').setValue("Add role");
+
+                                                                    } else {
+                                                                        webix.message({
+                                                                            text: "Sending role data",
+                                                                            expire: 1000
+                                                                        })
+                                                                        webix.ajax()
+                                                                            .headers({
+                                                                                'Content-Type': 'application/json'
+                                                                            })
+                                                                            .post(
+                                                                                '/api/roles', JSON.stringify(values),
+                                                                                function (
+                                                                                    text,
+                                                                                    data
+                                                                                ) {
+                                                                                    const response = JSON.parse(text);
+                                                                                    if (response.status === "error") {
+                                                                                        webix.message({
+                                                                                            type: "error",
+                                                                                            text: "Error: " + response.text
+                                                                                        });
+                                                                                    } else {
+                                                                                        webix.message(
+                                                                                            'Data successfuly added'
+                                                                                        );
+                                                                                    }
+
+                                                                                }
+                                                                            )
+                                                                    }
+                                                                    updateTable();
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        view: "checkbox",
+                                                        label: "retail\ and\ shipment",
+                                                        name: "permission.retail\ and\ shipment",
+                                                        labelWidth: 150
+                                                    },
+
+                                                    {
+                                                        view: "checkbox",
+                                                        label: "account management",
+                                                        name: 'permission.account\ management',
+                                                        labelWidth: 150
+                                                    },
+
+                                                    {
+                                                        view: "checkbox",
+                                                        label: "report data",
+                                                        name: 'permission.report\ data',
+                                                        labelWidth: 150
+                                                    },
+
+                                                    {
+                                                        view: "checkbox",
+                                                        label: "stock management",
+                                                        name: 'permission.stock\ management',
+                                                        labelWidth: 150
+                                                    }
+                                                ]
+                                            }]
+                                        }
+                                    ]
+                                }
+
+                                ]
+                            }
+                            ]
+                        },
+                        {}
+                        ]
+                    }
+                    ]
+                },
+                {
+                    view: "toolbar",
+                    css: "showFooter",
+                    padding: 10,
+                    elements: [{},
+                    {},
+                    {
+                        view: "label",
+                        label: "",
+                        css: "logo",
+                        width: 175,
+                        height: 30,
+                        type: "webix_secondary"
+                    }
+                    ]
+                }
+                ]
+            });
+            webix.ui.fullScreen();
+            if ($$('userCreatorForm')) {
+                $$('userCreatorForm').clear();
+            };
+            if ($$("mainSidebar")) {
+                $$("mainSidebar").select("users_management");
+
+                var sidebarRoutes = {
+                    dashboard: "/",
+                    users_management: "/management/users",
+                    supplyAndRetailManagement: "/retail-supply"
+                };
+                $$("mainSidebar").attachEvent("onAfterSelect", function (id) {
+                    var target = sidebarRoutes[id] || "/";
+                    window.location.href = target;
+                    return true;
+                });
+            };
+        })
+
+        function deleteUser(id) {
+            console.log(id);
+            webix.confirm({
+                title: "Hapus User",
+                ok: "Ya",
+                cancel: "Tidak",
+                text: `Are you sure want to delete user with id ${id}?`,
+                callback: function (result) {
+                    if (result) {
+                        webix.ajax()
+                            .headers({
+                                'Content-Type': 'application/json'
+                            })
+                            .del('/users/api/delete', {
+                                '_id': id
+                            }, function () {
+                                webix.message("User succesfully deleted");
+                                $$("myTable").clearAll();
+                                $$("myTable").load("/users/api/users");
+                            })
+                            .fail(function (xhr) {
+                                console.log(xhr.status);
+                                if (xhr.status === 403) {
+                                    webix.message({
+                                        type: "error",
+                                        text: "No Access to delete user!"
+                                    })
+                                } else {
+                                    webix.message({
+                                        type: "error",
+                                        text: "Error at deleting user!"
+                                    })
+                                }
+                            })
+                    }
+                }
+            })
+        }
+
+        function EditRole(id) {
+            updateRole = true;
+            const roleForm = $$('rolesTable');
+            const roleArr = roleForm.find(row => row._id === id);
+            if (roleArr && roleArr.length > 0) {
+                const data = roleArr[0];
+                $$('addRoleBtn').setValue("Update role");
+                const formTarget = $$("RolesForm");
+                formTarget.setValues(data);
+
+            } else {
+                webix.message({ type: "error", text: "No Data" })
+            }
+        }
+
+        function DeleteRole(id) {
+            webix.confirm({
+                title: "Hapus Role",
+                ok: "Ya",
+                cancel: "Tidak",
+                text: `Are you sure want to delete position with id = ${id}? \n Make sure there's no user assigned to this role before deleting.`,
+                callback: function (result) {
+                    if (result) {
+                        webix.ajax()
+                            .headers({
+                                'Content-Type': 'application/json'
+                            })
+                            .del('/api/roles/delete', { '_id': id },
+                                function () {
+                                    $$('RolesForm').clear(); $$('addRoleBtn').setValue("Add role")
+                                    updateTable();
+                                }
+                            )
+                            .fail(function (xhr) {
+                                console.log(xhr.status);
+                                if (xhr.status === 403) {
+                                    webix.message({
+                                        type: "error",
+                                        text: "Position still been used!"
+                                    })
+                                } else {
+                                    webix.message({
+                                        type: "error",
+                                        text: "Error at deleting position!"
+                                    })
+                                }
+                            })
+                    }
+                }
+
+            })
+        }
+        function resetPassword(id) {
+            webix.confirm({
+                title: "Reset Password",
+                cancel: "No",
+                ok: "Yes",
+                text: `Are you sure want to reset password for user with id ${id}?`,
+                callback: function (result) {
+                    if (result) {
+                        resetPasswordModal(id);
+                    }
+                }
+            })
+        }
+        function updateTable() {
+            $$('rolesTable').clearAll();
+            $$('rolesTable').load('/api/roles');
+            $$('roleSelectField').getPopup().getList().clearAll();
+            $$('roleSelectField').getPopup().getList().load('/users/api/rolesSelect');
+            $$('RolesForm').clear();
+            var roleColumn = $$("myTable").getColumnConfig("role");
+            if (roleColumn && roleColumn.collection) {
+                var roleOptions = roleColumn.collection;
+                roleOptions.clearAll();
+                roleOptions.load("/users/api/rolesSelect", function () {
+                    $$('myTable').clearAll();
+                    $$('myTable').load("/users/api/users");
+                });
+            } else {
+                $$('myTable').clearAll();
+                $$('myTable').load("/users/api/users");
+            }
+        }
+        var resetPasswordModal = function (id) {
+            webix.ui({
+                responsive: true,
+                view: "window",
+                id: "resetPasswordWindow",
+                width: 400,
+                position: "center",
+                modal: true,
+                head: "Reset Password",
+                body: {
+                    view: "form",
+                    id: "resetPasswordForm",
+                    elements: [
+                        {
+                            view: "text",
+                            type: "password",
+                            name: "newPassword",
+                            label: "New Password",
+                            placeholder: "Enter new password",
+                            labelWidth: 150,
+                            required: true
+                        },
+                        {
+                            view: "text",
+                            type: "password",
+                            name: "checkPassword",
+                            label: "Confirm Password",
+                            placeholder: "Re-enter new password",
+                            labelWidth: 150,
+                            required: true
+                        },
+                        {
+                            margin: 5,
+                            cols: [
+                                {
+                                    view: "button",
+                                    value: "Cancel",
+                                    click: function () {
+                                        $$('resetPasswordWindow').close();
+                                    }
+                                },
+                                {
+                                    view: "button",
+                                    value: "Reset Password",
+                                    css: "webix_primary",
+                                    click: function () {
+                                        const form = $$('resetPasswordForm');
+                                        if (!form.validate()) {
+                                            webix.message({
+                                                type: "error",
+                                                text: "All fields must be filled correctly."
+                                            });
+                                            return;
+                                        }
+                                        const values = form.getValues();
+                                        if (values.newPassword !== values.checkPassword) {
+                                            webix.message({
+                                                type: "error",
+                                                text: "Passwords do not match."
+                                            });
+                                            return;
+                                        }
+                                        webix.ajax()
+                                            .headers({ 'Content-Type': 'application/json' })
+                                            .patch('/users/api/resetPassword', JSON.stringify({ _id: id, newPassword: values.newPassword }),
+                                                function (text, data) {
+                                                    const response = JSON.parse(text);
+                                                    if (response.status === "error") {
+                                                        webix.message({
+                                                            type: "error",
+                                                            text: "Error: " + response.text
+                                                        });
+                                                    } else {
+                                                        webix.message('Password successfully reset');
+                                                        $$('resetPasswordWindow').close();
+                                                    }
+                                                }
+                                            )
+                                            .fail(function (xhr) {
+                                                console.log(xhr.status);
+                                                if (xhr.status === 403) {
+                                                    webix.message({
+                                                        type: "error",
+                                                        text: "No Access to reset password!"
+                                                    })
+                                                } else {
+                                                    webix.message({
+                                                        type: "error",
+                                                        text: "Error at resetting password!"
+                                                    })
+                                                }
+                                            })
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    rules: {
+                        "newPassword": webix.rules.isNotEmpty,
+                        "checkPassword": webix.rules.isNotEmpty
+                    }
+                }
+            }).show();
+        }
+    </script>
+    </script>
+</body>
+
+</html>
