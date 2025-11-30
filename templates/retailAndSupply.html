@@ -15,6 +15,46 @@
 <body>
     <script>
         var updateRole = false;
+        function deleteSupplier(supplierId) {
+            webix.confirm({
+                title: "Delete Supplier",
+                text: `Are you sure you want to delete supplier ${supplierId}?`,
+                ok: "Yes",
+                cancel: "No",
+                callback: function (result) {
+                    if (result) {
+                        webix.ajax().headers({ "Content-Type": "application/json" })
+                            .del("/api/retailSupply/supplierDeleter", { _id: supplierId }, function (response) {
+                                webix.message("Supplier deleted successfully");
+                                $$("supplierDatatable").clearAll();
+                                $$("supplierDatatable").load("/api/retailSupply/suppliersGetter");
+                            }).fail(function () {
+                                webix.message({ type: "error", text: "Failed to delete supplier" });
+                            });
+                    }
+                }
+            });
+        }
+        function deleteRetail(retailId) {
+            webix.confirm({
+                title: "Delete Retail",
+                text: `Are you sure you want to delete retail ${retailId}?`,
+                ok: "Yes",
+                cancel: "No",
+                callback: function (result) {
+                    if (result) {
+                        webix.ajax().headers({ "Content-Type": "application/json" })
+                            .del("/api/retailSupply/retailDeleter", { _id: retailId }, function (response) {
+                                webix.message("Retail deleted successfully");
+                                $$("retailDatatable").clearAll();
+                                $$("retailDatatable").load("/api/retailSupply/retailGetter");
+                            }).fail(function () {
+                                webix.message({ type: "error", text: "Failed to delete retail" });
+                            });
+                    }
+                }
+            });
+        }
         webix.ready(function () {
             webix.attachEvent("onAjaxError", function (xhr) {
                 if (xhr.status === 401) {
@@ -39,12 +79,18 @@
                             window.location.href = "/";
                         }
                     },
-                    {
-                        width: 1250
-                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
                     {
                         view: "label",
-                        width: 150,
+                        width: 170,
                         label: "Hello! {{name}}",
                         autowidth: true
                     },
@@ -67,7 +113,6 @@
                 },
                 {
                     type: "clean",
-
                     cols: [{
                         view: "sidebar",
                         id: "mainSidebar",
@@ -99,473 +144,473 @@
                         ]
                     },
                     {
-                        type: "clean",
-                        paddingX: 30,
-                        rows: [{
-                            height: 70,
-                            cols: [{
+                        view: "scrollview",
+                        scroll: "y",
+                        body: {
+                            type: "clean",
+                            paddingX: 30,
+                            rows: [{
+                                height: 70,
+                                cols: [{
+                                    type: "clean",
+                                    template: "<H1>{{title}}</H1>",
+                                },
+                                {}
+                                ]
+                            },
+                            {
                                 type: "clean",
-                                template: "<H1>{{title}}</H1>",
-                                width: 800,
+                                cols: [
+                                    {
+                                        view: "label",
+                                        type: "clean",
+                                        label: "Supplier Creator",
+                                        height: 30
+                                    },
+                                    {
+                                        view: "label",
+                                        type: "clean",
+                                        label: "Retail Creator",
+                                        height: 30
+                                    }
+                                ]
+                            },
+                            {
+                                type: "clean",
+                                cols: [
+                                    {
+                                        paddingX: 5,
+                                        type: "clean",
+                                        rows: [
+                                            {
+                                                type: "clean",
+                                                view: "form",
+                                                id: "supplierForm",
+                                                elements: [
+                                                    {
+                                                        id: "supplierIdForm",
+                                                        name: "_id",
+                                                        hidden: true
+                                                    },
+                                                    {
+                                                        id: "supplierNameForm",
+                                                        name: "supplierName",
+                                                        labelWidth: 170,
+                                                        label: "Supplier Name",
+                                                        view: "text",
+                                                        required: true
+                                                    },
+                                                    {
+                                                        id: "supplierContactPersonForm",
+                                                        name: "contactPerson",
+                                                        labelWidth: 170,
+                                                        label: "Supplier Contact Person",
+                                                        view: "text",
+                                                        required: true
+                                                    },
+                                                    {
+                                                        id: "supplierEmailForm",
+                                                        name: "email",
+                                                        labelWidth: 170,
+                                                        label: "Supplier Email",
+                                                        view: "text",
+                                                        required: true
+                                                    },
+                                                    {
+                                                        id: "supplierPhoneForm",
+                                                        name: "phone",
+                                                        view: "text",
+                                                        labelWidth: 170,
+                                                        label: "Supplier Phone Number",
+                                                        attributes: {
+                                                            maxlength: 13
+                                                        },
+                                                        pattern: {
+                                                            mask: "####-####-#####"
+                                                        },
+                                                        validate: function (value) {
+
+                                                            return value
+                                                                .length >= 10 &&
+                                                                /^\d+$/.test(
+                                                                    value
+                                                                );
+                                                        },
+                                                        required: true
+                                                    },
+                                                    {
+                                                        id: "supplierAddressForm",
+                                                        name: "address",
+                                                        labelWidth: 170,
+                                                        label: "Supplier Address",
+                                                        view: "text",
+                                                        required: true
+                                                    }
+                                                ],
+                                                rules: {
+                                                    "email": function (value) {
+                                                        if (!webix.rules.isNotEmpty(
+                                                            value))
+                                                            return false;
+                                                        return webix.rules.isEmail(
+                                                            value);
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                paddingY: 20,
+                                                cols: [
+                                                    {
+                                                        view: "button",
+                                                        value: "Cancel",
+                                                        click: function () {
+                                                            $$("supplierForm").clear();
+                                                        }
+                                                    },
+                                                    {
+                                                        view: "button",
+                                                        css: "webix_primary",
+                                                        value: "Add Supplier Data",
+                                                        click: function () {
+                                                            let form = $$("supplierForm");
+                                                            let datatable = $$("supplierDatatable");
+                                                            if (form.validate()) {
+                                                                webix.ajax()
+                                                                    .headers({ "Content-Type": "application/json" })
+                                                                    .post("/api/retailSupply/supplierCreator", form.getValues(), function (response) {
+                                                                        webix.message("Supplier added successfully");
+                                                                        form.clear();
+                                                                        datatable.clearAll();
+                                                                        datatable.load("/api/retailSupply/suppliersGetter");
+                                                                    }).fail(function () {
+                                                                        webix.message({ type: "error", text: "Failed to add supplier" });
+                                                                    });
+                                                            } else {
+                                                                webix.message("Please fill out all fields in the form.");
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                height: 450,
+                                                view: "datatable",
+                                                id: "supplierDatatable",
+                                                editable: true,
+                                                save: "/api/retailSupply/supplierUpdater",
+                                                columns: [
+                                                    {
+                                                        id: "_id",
+                                                        header: "Supplier ID",
+                                                        name: "_id",
+                                                        template: function (obj) {
+                                                            return obj._id;
+                                                        },
+                                                        sort: 'string',
+                                                        readonly: true
+                                                    },
+                                                    {
+                                                        id: "supplierName",
+                                                        header: "Supplier Name",
+                                                        name: "name",
+                                                        width: 130,
+                                                        template: function (obj) {
+                                                            return obj.supplierName;
+                                                        },
+                                                        editor: "text",
+                                                        sort: 'string'
+                                                    },
+                                                    {
+                                                        id: "contactPerson",
+                                                        header: "Contact Person",
+                                                        name: "contactPerson",
+                                                        width: 140,
+                                                        template: function (obj) {
+                                                            return obj.contactPerson;
+                                                        },
+                                                        editor: "text",
+                                                        sort: 'string'
+                                                    },
+                                                    {
+                                                        id: "email",
+                                                        header: "Email",
+                                                        name: "email",
+                                                        width: 180,
+                                                        template: function (obj) {
+                                                            return obj.email;
+                                                        },
+                                                        editor: "text",
+                                                        sort: 'string'
+                                                    },
+                                                    {
+                                                        id: "phone",
+                                                        header: "Phone Number",
+                                                        name: "phone",
+                                                        width: 140,
+                                                        template: function (obj) {
+                                                            return obj.phone;
+                                                        },
+                                                        attributes: {
+                                                            maxlength: 13
+                                                        },
+                                                        pattern: {
+                                                            mask: "####-####-#####"
+                                                        },
+                                                        validate: function (value) {
+
+                                                            return value
+                                                                .length >= 10 &&
+                                                                /^\d+$/.test(
+                                                                    value
+                                                                );
+                                                        },
+                                                        editor: "text",
+                                                        sort: 'string'
+                                                    },
+                                                    {
+                                                        id: "address",
+                                                        header: "Address",
+                                                        name: "address",
+                                                        width: 250,
+                                                        template: function (obj) {
+                                                            return obj.address;
+                                                        },
+                                                        editor: "text",
+                                                        sort: 'string'
+                                                    },
+                                                    {
+                                                        id: "actions",
+                                                        header: "Actions",
+                                                        template: function (obj) {
+                                                            return `<button onclick="deleteSupplier('${obj._id}')" style="margin-top:10px !important;">Delete</button>`;
+                                                        },
+                                                        width: 100
+                                                    }
+                                                ],
+                                                url: "/api/retailSupply/suppliersGetter",
+                                            },
+                                            {}
+                                        ]
+                                    },
+                                    {
+                                        paddingX: 5,
+                                        type: "clean",
+                                        rows: [
+                                            {
+                                                type: "clean",
+                                                view: "form",
+                                                id: "RetailForm",
+                                                elements: [
+                                                    {
+                                                        id: "retailIdForm",
+                                                        name: "_id",
+                                                        hidden: true
+                                                    },
+                                                    {
+                                                        id: "retailNameForm",
+                                                        name: "retailName",
+                                                        labelWidth: 170,
+                                                        label: "Retail Name",
+                                                        view: "text",
+                                                        required: true
+                                                    },
+                                                    {
+                                                        id: "retailContactPersonForm",
+                                                        name: "retailContactPerson",
+                                                        labelWidth: 170,
+                                                        label: "Retail Contact Person",
+                                                        view: "text",
+                                                        required: true
+                                                    },
+                                                    {
+                                                        id: "retailEmailForm",
+                                                        name: "retailEmail",
+                                                        labelWidth: 170,
+                                                        label: "Retail Email",
+                                                        view: "text",
+                                                        required: true
+                                                    },
+                                                    {
+                                                        id: "retailPhoneForm",
+                                                        name: "retailPhoneNumber",
+                                                        view: "text",
+                                                        labelWidth: 170,
+                                                        label: "Retail Phone Number",
+                                                        attributes: {
+                                                            maxlength: 13
+                                                        },
+                                                        pattern: {
+                                                            mask: "####-####-#####"
+                                                        },
+                                                        validate: function (value) {
+
+                                                            return value
+                                                                .length >= 10 &&
+                                                                /^\d+$/.test(
+                                                                    value
+                                                                );
+                                                        },
+                                                        required: true
+                                                    },
+                                                    {
+                                                        id: "retailAddressForm",
+                                                        name: "retailAddress",
+                                                        labelWidth: 170,
+                                                        label: "Retail Address",
+                                                        view: "text",
+                                                        required: true
+                                                    }
+                                                ],
+                                                rules: {
+                                                    "retailEmail": function (value) {
+                                                        if (!webix.rules.isNotEmpty(
+                                                            value))
+                                                            return false;
+                                                        return webix.rules.isEmail(
+                                                            value);
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                paddingY: 20,
+                                                cols: [
+                                                    {
+                                                        view: "button",
+                                                        value: "Cancel",
+                                                        click: function () {
+                                                            $$("RetailForm").clear();
+                                                        }
+                                                    },
+                                                    {
+                                                        view: "button",
+                                                        css: "webix_primary",
+                                                        value: "Add Retail Data",
+                                                        click: function () {
+                                                            let form = $$("RetailForm");
+                                                            let datatable = $$("retailDatatable");
+                                                            if (form.validate()) {
+                                                                webix.ajax()
+                                                                    .headers({ "Content-Type": "application/json" })
+                                                                    .post("/api/retailSupply/retailCreator", form.getValues(), function (response) {
+                                                                        webix.message("Retail added successfully");
+                                                                        form.clear();
+                                                                        datatable.clearAll();
+                                                                        datatable.load("/api/retailSupply/retailGetter");
+                                                                    }).fail(function () {
+                                                                        webix.message({ type: "error", text: "Failed to add retail" });
+                                                                    });
+                                                            } else {
+                                                                webix.message("Please fill out all fields in the form.");
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                height: 450,
+                                                view: "datatable",
+                                                id: "retailDatatable",
+                                                editable: true,
+                                                save: "/api/retailSupply/retailUpdater",
+                                                columns: [
+                                                    {
+                                                        id: "_id",
+                                                        header: "Retail ID",
+                                                        name: "_id",
+                                                        template: function (obj) {
+                                                            return obj._id;
+                                                        },
+                                                        sort: 'string',
+                                                        readonly: true
+                                                    },
+                                                    {
+                                                        id: "retailName",
+                                                        header: "Retail Name",
+                                                        name: "name",
+                                                        width: 130,
+                                                        template: function (obj) {
+                                                            return obj.retailName;
+                                                        },
+                                                        sort: 'string',
+                                                        editor: "text"
+                                                    },
+                                                    {
+                                                        id: "retailContactPerson",
+                                                        header: "Contact Person",
+                                                        name: "contactPerson",
+                                                        width: 140,
+                                                        template: function (obj) {
+                                                            return obj.retailContactPerson;
+                                                        },
+                                                        sort: 'string',
+                                                        editor: "text"
+                                                    },
+                                                    {
+                                                        id: "retailPhoneNumber",
+                                                        header: "Phone Number",
+                                                        name: "phoneNumber",
+                                                        width: 140,
+                                                        template: function (obj) {
+                                                            return obj.retailPhoneNumber;
+                                                        },
+                                                        attributes: {
+                                                            maxlength: 13
+                                                        },
+                                                        pattern: {
+                                                            mask: "####-####-#####"
+                                                        },
+                                                        validate: function (value) {
+
+                                                            return value
+                                                                .length >= 10 &&
+                                                                /^\d+$/.test(
+                                                                    value
+                                                                );
+                                                        },
+                                                        sort: 'string',
+                                                        editor: "text"
+                                                    },
+                                                    {
+                                                        id: "retailEmail",
+                                                        header: "Email",
+                                                        name: "email",
+                                                        width: 180,
+                                                        template: function (obj) {
+                                                            return obj.retailEmail;
+                                                        },
+                                                        sort: 'string',
+                                                        editor: "text"
+                                                    },
+                                                    {
+                                                        id: "retailAddress",
+                                                        header: "Address",
+                                                        name: "retailAddress",
+                                                        width: 250,
+                                                        template: function (obj) {
+                                                            return obj.retailAddress;
+                                                        },
+                                                        sort: 'string',
+                                                        editor: "text"
+                                                    },
+                                                    {
+                                                        id: "actions",
+                                                        header: "Actions",
+                                                        template: function (obj) {
+                                                            return `<button onclick="deleteRetail('${obj._id}')" style="margin-top:10px !important;">Delete</button>`;
+                                                        },
+                                                        width: 100
+                                                    }
+                                                ],
+                                                url: "/api/retailSupply/retailGetter",
+                                            },
+                                            {}
+                                        ]
+                                    }
+                                ]
                             },
                             {}
                             ]
-                        },
-                        {
-                            type: "clean",
-                            cols: [
-                                {
-                                    view: "label",
-                                    type: "clean",
-                                    label: "Supplier Creator",
-                                    height: 30
-                                },
-                                {
-                                    view: "label",
-                                    type: "clean",
-                                    label: "Retail Creator",
-                                    height: 30
-                                }
-                            ]
-                        },
-                        {
-                            type: "clean",
-                            cols: [
-                                {
-                                    paddingX: 5,
-                                    type: "clean",
-                                    rows: [
-                                        {
-                                            type: "clean",
-                                            view: "form",
-                                            id: "supplierForm",
-                                            elements: [
-                                                {
-                                                    id: "supplierIdForm",
-                                                    name: "_id",
-                                                    hidden: true
-                                                },
-                                                {
-                                                    id: "supplierNameForm",
-                                                    name: "supplierName",
-                                                    labelWidth: 170,
-                                                    label: "Supplier Name",
-                                                    view: "text",
-                                                    required: true
-                                                },
-                                                {
-                                                    id: "supplierContactPersonForm",
-                                                    name: "contactPerson",
-                                                    labelWidth: 170,
-                                                    label: "Supplier Contact Person",
-                                                    view: "text",
-                                                    required: true
-                                                },
-                                                {
-                                                    id: "supplierEmailForm",
-                                                    name: "email",
-                                                    labelWidth: 170,
-                                                    label: "Supplier Email",
-                                                    view: "text",
-                                                    required: true
-                                                },
-                                                {
-                                                    id: "supplierPhoneForm",
-                                                    name: "phone",
-                                                    view: "text",
-                                                    labelWidth: 170,
-                                                    label: "Supplier Phone Number",
-                                                    attributes: {
-                                                        maxlength: 13
-                                                    },
-                                                    pattern: {
-                                                        mask: "####-####-#####"
-                                                    },
-                                                    validate: function (value) {
-
-                                                        return value
-                                                            .length >= 10 &&
-                                                            /^\d+$/.test(
-                                                                value
-                                                            );
-                                                    },
-                                                    required: true
-                                                },
-                                                {
-                                                    id: "supplierAddressForm",
-                                                    name: "address",
-                                                    labelWidth: 170,
-                                                    label: "Supplier Address",
-                                                    view: "text",
-                                                    required: true
-                                                }
-                                            ],
-                                            rules: {
-                                                "email": function (value) {
-                                                    if (!webix.rules.isNotEmpty(
-                                                        value))
-                                                        return false;
-                                                    return webix.rules.isEmail(
-                                                        value);
-                                                }
-                                            }
-                                        },
-                                        {
-                                            paddingY: 20,
-                                            cols: [
-                                                {
-                                                    view: "button",
-                                                    value: "Cancel",
-                                                    click: function () {
-                                                        $$("supplierForm").clear();
-                                                    }
-                                                },
-                                                {
-                                                    view: "button",
-                                                    css: "webix_primary",
-                                                    value: "Add Supplier Data",
-                                                    click: function () {
-                                                        let form = $$("supplierForm");
-                                                        let datatable = $$("supplierDatatable");
-                                                        if (form.validate()) {
-                                                            webix.ajax()
-                                                                .headers({ "Content-Type": "application/json" })
-                                                                .post("/api/retailSupply/supplierCreator", form.getValues(), function (response) {
-                                                                    webix.message("Supplier added successfully");
-                                                                    form.clear();
-                                                                    datatable.clearAll();
-                                                                    datatable.load("/api/retailSupply/suppliersGetter");
-                                                                }).fail(function () {
-                                                                    webix.message({ type: "error", text: "Failed to add supplier" });
-                                                                });
-                                                        } else {
-                                                            webix.message("Please fill out all fields in the form.");
-                                                        }
-                                                    }
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            height: 450,
-                                            view: "datatable",
-                                            id: "supplierDatatable",
-                                            editable: true,
-                                            save: "/api/retailSupply/supplierUpdater",
-                                            columns: [
-                                                {
-                                                    id: "_id",
-                                                    header: "Supplier ID",
-                                                    name: "_id",
-                                                    template: function (obj) {
-                                                        return obj._id;
-                                                    },
-                                                    sort: 'string',
-                                                    readonly: true
-                                                },
-                                                {
-                                                    id: "supplierName",
-                                                    header: "Supplier Name",
-                                                    name: "name",
-                                                    width: 130,
-                                                    template: function (obj) {
-                                                        return obj.supplierName;
-                                                    },
-                                                    editor: "text",
-                                                    sort: 'string'
-                                                },
-                                                {
-                                                    id: "contactPerson",
-                                                    header: "Contact Person",
-                                                    name: "contactPerson",
-                                                    width: 140,
-                                                    template: function (obj) {
-                                                        return obj.contactPerson;
-                                                    },
-                                                    editor: "text",
-                                                    sort: 'string'
-                                                },
-                                                {
-                                                    id: "email",
-                                                    header: "Email",
-                                                    name: "email",
-                                                    width: 180,
-                                                    template: function (obj) {
-                                                        return obj.email;
-                                                    },
-                                                    editor: "text",
-                                                    sort: 'string'
-                                                },
-                                                {
-                                                    id: "phone",
-                                                    header: "Phone Number",
-                                                    name: "phone",
-                                                    width: 140,
-                                                    template: function (obj) {
-                                                        return obj.phone;
-                                                    },
-                                                    attributes: {
-                                                        maxlength: 13
-                                                    },
-                                                    pattern: {
-                                                        mask: "####-####-#####"
-                                                    },
-                                                    validate: function (value) {
-
-                                                        return value
-                                                            .length >= 10 &&
-                                                            /^\d+$/.test(
-                                                                value
-                                                            );
-                                                    },
-                                                    editor: "text",
-                                                    sort: 'string'
-                                                },
-                                                {
-                                                    id: "address",
-                                                    header: "Address",
-                                                    name: "address",
-                                                    width: 250,
-                                                    template: function (obj) {
-                                                        return obj.address;
-                                                    },
-                                                    editor: "text",
-                                                    sort: 'string'
-                                                }
-                                            ],
-                                            url: "/api/retailSupply/suppliersGetter",
-                                        },
-                                        {}
-                                    ]
-                                },
-                                {
-                                    paddingX: 5,
-                                    type: "clean",
-                                    rows: [
-                                        {
-                                            type: "clean",
-                                            view: "form",
-                                            id: "RetailForm",
-                                            elements: [
-                                                {
-                                                    id: "retailIdForm",
-                                                    name: "_id",
-                                                    hidden: true
-                                                },
-                                                {
-                                                    id: "retailNameForm",
-                                                    name: "retailName",
-                                                    labelWidth: 170,
-                                                    label: "Retail Name",
-                                                    view: "text",
-                                                    required: true
-                                                },
-                                                {
-                                                    id: "retailContactPersonForm",
-                                                    name: "retailContactPerson",
-                                                    labelWidth: 170,
-                                                    label: "Retail Contact Person",
-                                                    view: "text",
-                                                    pattern: {
-                                                        mask: "####-####-#####"
-                                                    },
-                                                    required: true
-                                                },
-                                                {
-                                                    id: "retailEmailForm",
-                                                    name: "retailEmail",
-                                                    labelWidth: 170,
-                                                    label: "Retail Email",
-                                                    view: "text",
-                                                    required: true
-                                                },
-                                                {
-                                                    id: "retailPhoneForm",
-                                                    name: "retailPhoneNumber",
-                                                    view: "text",
-                                                    labelWidth: 170,
-                                                    label: "Retail Phone Number",
-                                                    attributes: {
-                                                        maxlength: 13
-                                                    },
-                                                    pattern: {
-                                                        mask: "####-####-#####"
-                                                    },
-                                                    validate: function (value) {
-
-                                                        return value
-                                                            .length >= 10 &&
-                                                            /^\d+$/.test(
-                                                                value
-                                                            );
-                                                    },
-                                                    required: true
-                                                },
-                                                {
-                                                    id: "retailAddressForm",
-                                                    name: "retaiAddress",
-                                                    labelWidth: 170,
-                                                    label: "Retail Address",
-                                                    view: "text",
-                                                    required: true
-                                                }
-                                            ],
-                                            rules: {
-                                                "retailEmail": function (value) {
-                                                    if (!webix.rules.isNotEmpty(
-                                                        value))
-                                                        return false;
-                                                    return webix.rules.isEmail(
-                                                        value);
-                                                }
-                                            }
-                                        },
-                                        {
-                                            paddingY: 20,
-                                            cols: [
-                                                {
-                                                    view: "button",
-                                                    value: "Cancel",
-                                                    click: function () {
-                                                        $$("RetailForm").clear();
-                                                    }
-                                                },
-                                                {
-                                                    view: "button",
-                                                    css: "webix_primary",
-                                                    value: "Add Retail Data",
-                                                    click: function () {
-                                                        let form = $$("RetailForm");
-                                                        let datatable = $$("retailDatatable");
-                                                        if (form.validate()) {
-                                                            webix.ajax()
-                                                                .headers({ "Content-Type": "application/json" })
-                                                                .post("/api/retailSupply/retailCreator", form.getValues(), function (response) {
-                                                                    webix.message("Retail added successfully");
-                                                                    form.clear();
-                                                                    datatable.clearAll();
-                                                                    datatable.load("/api/retailSupply/retailCreator");
-                                                                }).fail(function () {
-                                                                    webix.message({ type: "error", text: "Failed to add retail" });
-                                                                });
-                                                        } else {
-                                                            webix.message("Please fill out all fields in the form.");
-                                                        }
-                                                    }
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            height: 450,
-                                            view: "datatable",
-                                            id: "retailDatatable",
-                                            editable: true,
-                                            save: "/api/retailSupply/retailUpdater",
-                                            columns: [
-                                                {
-                                                    id: "_id",
-                                                    header: "Retail ID",
-                                                    name: "_id",
-                                                    template: function (obj) {
-                                                        return obj._id;
-                                                    },
-                                                    sort: 'string',
-                                                    readonly: true
-                                                },
-                                                {
-                                                    id: "retailName",
-                                                    header: "Retail Name",
-                                                    name: "name",
-                                                    width: 130,
-                                                    template: function (obj) {
-                                                        return obj.retailName;
-                                                    },
-                                                    sort: 'string',
-                                                    editor: "text"
-                                                },
-                                                {
-                                                    id: "retailContactPerson",
-                                                    header: "Contact Person",
-                                                    name: "contactPerson",
-                                                    width: 140,
-                                                    template: function (obj) {
-                                                        return obj.retailContactPerson;
-                                                    },
-                                                    sort: 'string',
-                                                    editor: "text"
-                                                },
-                                                {
-                                                    id: "retailPhoneNumber",
-                                                    header: "Phone Number",
-                                                    name: "phoneNumber",
-                                                    width: 140,
-                                                    template: function (obj) {
-                                                        return obj.retailPhoneNumber;
-                                                    },
-                                                    attributes: {
-                                                        maxlength: 13
-                                                    },
-                                                    pattern: {
-                                                        mask: "####-####-#####"
-                                                    },
-                                                    validate: function (value) {
-
-                                                        return value
-                                                            .length >= 10 &&
-                                                            /^\d+$/.test(
-                                                                value
-                                                            );
-                                                    },
-                                                    sort: 'string',
-                                                    editor: "text"
-                                                },
-                                                {
-                                                    id: "retailEmail",
-                                                    header: "Email",
-                                                    name: "email",
-                                                    width: 180,
-                                                    template: function (obj) {
-                                                        return obj.retailEmail;
-                                                    },
-                                                    sort: 'string',
-                                                    editor: "text"
-                                                },
-                                                {
-                                                    id: "retailAddress",
-                                                    header: "Address",
-                                                    name: "retailAddress",
-                                                    width: 250,
-                                                    template: function (obj) {
-                                                        return obj.retailAddress;
-                                                    },
-                                                    sort: 'string',
-                                                    editor: "text"
-                                                },
-                                            ],
-                                            url: "/api/retailSupply/retailGetter",
-                                        },
-                                        {}
-                                    ]
-                                }
-                            ]
-                        },
-                        {}
-                        ]
-                    }
-                    ]
-                },
-                {
-                    view: "toolbar",
-                    css: "showFooter",
-                    padding: 10,
-                    elements: [{},
-                    {},
-                    {
-                        view: "label",
-                        label: "",
-                        css: "logo",
-                        width: 175,
-                        height: 30,
-                        type: "webix_secondary"
+                        }
                     }
                     ]
                 }

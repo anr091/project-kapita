@@ -244,7 +244,7 @@ def productCreator():
             "latestAcceptedDate":"-",
 
         })
-
+        print(format,log,firstInv)
         if input and log and firstInv:
             return jsonify({'message':'berhasil','status':'success'}),200
         else:
@@ -355,7 +355,7 @@ def supplierGetter():
     if auth_check:
         print("Tidak ada session aktif")
         return auth_check
-    AuthRole = roleCollection.collection.find_one({'_id':g.user['role']})['permission']['stock management']
+    AuthRole = roleCollection.collection.find_one({'_id':g.user['role']})['permission']['retail and shipment']
     if not AuthRole:
         return jsonify({'error':'No Access'}),401
     data = list(supplierCollection.collection.find())
@@ -647,4 +647,42 @@ def retailUpdater():
         return jsonify({'status':'error','text':'unknown error'}),500
     except Exception as e:
         print(f"Error update: {e}")
+        return jsonify({"status":"error","text":str(e)}),500
+    
+@API_BP.route('/retailSupply/supplierDeleter',methods=['DELETE'])
+def supplierDelete():
+    auth_check = check_login()
+    if auth_check:
+        print("Tidak ada session aktif")
+        return auth_check
+    AuthRole = roleCollection.collection.find_one({'_id':g.user['role']})['permission']['retail and shipment']
+    if not AuthRole:
+        return jsonify({'error':'No Access'}), 401
+    try:
+        data = request.get_json()
+        result = supplierCollection.collection.delete_one({'_id':data['_id']})
+        if result:
+            return jsonify({'status':'success','text':'data deleted'}),200
+        return jsonify({'status':'error','text':'unknown error'}),500
+    except Exception as e:
+        print(f"Error delete: {e}")
+        return jsonify({"status":"error","text":str(e)}),500
+    
+@API_BP.route('/retailSupply/retailDeleter',methods=['DELETE'])
+def retailDelete():
+    auth_check = check_login()
+    if auth_check:
+        print("Tidak ada session aktif")
+        return auth_check
+    AuthRole = roleCollection.collection.find_one({'_id':g.user['role']})['permission']['retail and shipment']
+    if not AuthRole:
+        return jsonify({'error':'No Access'}), 401
+    try:
+        data = request.get_json()
+        result = retailCollection.collection.delete_one({'_id':data['_id']})
+        if result:
+            return jsonify({'status':'success','text':'data deleted'}),200
+        return jsonify({'status':'error','text':'unknown error'}),500
+    except Exception as e:
+        print(f"Error delete: {e}")
         return jsonify({"status":"error","text":str(e)}),500

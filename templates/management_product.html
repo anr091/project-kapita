@@ -335,9 +335,15 @@
                             window.location.href = "/";
                         }
                     },
-                    {
-                        width: 1250
-                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
                     {
                         view: "label",
                         width: 150,
@@ -394,270 +400,258 @@
                         ]
                     },
                     {
-
-                        type: "clean",
-                        rows: [{
-                            paddingX: 30,
-                            height: 70,
-                            cols: [{
-                                type: "clean",
-                                template: "<H1>{{title}}</H1>",
-                                width: 800,
-                            },
-                            {}
-                            ]
-                        },
-                        {
-                            paddingX: 20,
-                            cols: [
-                                {
+                        view: "scrollview", // 1. Define as scrollview
+                        scroll: "y",
+                        body: {
+                            type: "clean",
+                            rows: [{
+                                paddingX: 30,
+                                height: 70,
+                                cols: [{
                                     type: "clean",
-                                    margin: 20,
-                                    paddingX: 30,
-                                    width: 750,
-                                    rows: [
-                                        {
-
-                                            height: 110,
-                                            rows: [
-                                                {
-                                                    view: "search",
-                                                    id: "searchProduct",
-                                                    placeholder: "Search everything on product table",
-                                                    on: {
-                                                        "onTimedKeyPress": function () {
-                                                            let text = this.getValue().toLowerCase();
-                                                            $$('productTable').filter(searchFilterProduct, text);
-                                                        }
-                                                    }
-                                                }
-                                                //{% if Perm['report data'] %}
-                                                ,
-                                                {
-                                                    cols: [
-                                                        {
-                                                            view: "button",
-                                                            css: "webix_primary",
-                                                            value: "Create product",
-                                                            click: function () {
-                                                                $$('createProductModal').show();
-                                                            }
-                                                        },
-                                                        {
-                                                            view: "button",
-                                                            css: "webix_primary",
-                                                            value: "Create Arrival Report",
-                                                            click: function () {
-                                                                $$('arrivalItemsDatatable').showOverlay("No items added yet.");
-                                                                $$('arrivalReportModal').show();
-                                                            }
-                                                        },
-                                                        {
-                                                            view: "button",
-                                                            css: "webix_primary",
-                                                            value: "Create Shipment Report",
-                                                            click: function () {
-                                                                $$('shipmentModal').show();
-                                                            }
-                                                        }
-                                                    ]
-                                                }
-                                                // {% endif %}
-                                                ,
-                                                {
-                                                    cols: [
-                                                        {
-                                                            view: "button",
-                                                            css: "webix_primary",
-                                                            value: "See Product Log",
-                                                            click: function () {
-                                                                $$('productLogModal').show();
-                                                            }
-                                                        },
-                                                        {
-                                                            view: "button",
-                                                            css: "webix_primary",
-                                                            value: " See Arrival Log",
-                                                            click: function () {
-                                                                $$('arrivalLogModal').show();
-                                                            }
-                                                        },
-                                                        {
-                                                            view: "button",
-                                                            css: "webix_primary",
-                                                            value: "See Shipment Log",
-                                                            click: function () {
-                                                                $$('shipmentLogModal').show();
-                                                            }
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            view: "datatable",
-                                            id: "productInventoryTable",
-                                            height: 570,
-                                            columns: [
-                                                {
-                                                    id: "inventoryId",
-                                                    name: "_id",
-                                                    width: 100,
-                                                    header: "ID",
-                                                    template: function (obj) {
-                                                        if (obj._id) {
-                                                            return obj._id;
-                                                        }
-                                                    }
-                                                },
-                                                {
-                                                    id: "productId",
-                                                    name: "productID",
-                                                    width: 200,
-                                                    header: "Product ID",
-                                                    template: function (obj) {
-                                                        if (obj.productID) {
-                                                            return obj.productID;
-                                                        }
-                                                    }
-
-                                                },
-                                                {
-
-                                                    id: "quantityNowProduct",
-                                                    name: "quantityNow",
-                                                    width: 150,
-                                                    header: "Qty/Unit Now",
-                                                    template: function (obj) {
-                                                        if (obj.quantityNow) {
-                                                            return obj.quantityNow;
-                                                        }
-                                                    }
-                                                },
-                                                {
-                                                    id: "latestAcceptedDateProduct",
-                                                    name: "latestAcceptedDate",
-                                                    header: "Last Accepted",
-                                                    width: 215,
-                                                    template: function (obj) {
-                                                        if (obj.latestAcceptedDate) {
-                                                            return obj.latestAcceptedDate;
-                                                        }
-                                                    }
-                                                }
-                                            ],
-                                            url: "/api/product/inventory"
-                                        }
-                                    ]
+                                    template: "<H1>{{title}}</H1>",
+                                    width: 800,
                                 },
-                                {
-                                    view: "datatable",
-                                    id: "productTable",
-                                    width: 1050,
-                                    height: 700,
-                                    columns: [
-                                        {
-                                            id: "_id",
-                                            width: 100,
-                                            view: "text",
-                                            name: "productId",
-                                            header: "Product ID",
-                                            sort: "string",
-                                        },
-                                        {
-                                            id: "namaProduk",
-                                            width: 200,
-                                            view: "text",
-                                            name: "namaProduk",
-                                            sort: "string",
-                                            header: "Product Name"
-                                        },
-                                        {
-                                            id: "barcodeEAN",
-                                            width: 200,
-                                            view: "text",
-                                            name: "barcodeEAN",
-                                            sort: "string",
-                                            header: "Barcode"
-                                        },
-                                        {
-                                            id: "kategoriProduct",
-                                            header: "Kategori",
-                                            editor: "text",
-                                            name: 'kategoriProduct',
-                                            sort: "string",
-                                            template: function (obj) {
-                                                if (obj.klasifikasi && obj.klasifikasi.namaKategori) {
-                                                    return obj.klasifikasi.namaKategori;
-                                                }
-                                            }
-                                        },
-                                        {
-                                            id: "ABCProduct",
-                                            header: "ABC Class",
-                                            editor: "text",
-                                            name: 'ABCProduct',
-                                            sort: "string",
-                                            template: function (obj) {
-                                                if (obj.klasifikasi && obj.klasifikasi.analisisABC) {
-                                                    return obj.klasifikasi.analisisABC;
-                                                }
-                                            }
-                                        },
-                                        {
-                                            id: "unitSimpan",
-                                            header: "Store Unit",
-                                            editor: "text",
-                                            name: "unitSimpan",
-                                            sort: "string",
-                                            template: function (obj) {
-                                                if (obj.satuan && obj.satuan.unitSimpan) {
-                                                    return obj.satuan.unitSimpan
-                                                }
-                                            }
-                                        },
-                                        {
-                                            id: "statusProduct",
-                                            header: "Status",
-                                            name: "statusProduct",
-                                            sort: "string",
-                                            template: function (obj) {
-                                                return obj.statusKontrol && obj.statusKontrol.status
-                                            }
-                                        },
-                                        {
-                                            id: "ActionProduct",
-                                            header: "More Options",
-                                            width: 140,
-                                            template: function (obj) {
-                                                return `<button onclick="Detailfunction('${obj._id}')" style="margin-top:10px !important;">Detail</button>`
-                                            }
-                                        },
-                                    ],
-                                    url: "/api/product",
-                                }
-                            ]
+                                {}
+                                ]
+                            },
+                            {
+                                paddingX: 20,
+                                cols: [
+                                    {
+                                        type: "clean",
+                                        margin: 20,
+                                        paddingX: 30,
+                                        width: 750,
+                                        rows: [
+                                            {
 
-                        },
-                        {
+                                                height: 110,
+                                                rows: [
+                                                    {
+                                                        view: "search",
+                                                        id: "searchProduct",
+                                                        placeholder: "Search everything on product table",
+                                                        on: {
+                                                            "onTimedKeyPress": function () {
+                                                                let text = this.getValue().toLowerCase();
+                                                                $$('productTable').filter(searchFilterProduct, text);
+                                                            }
+                                                        }
+                                                    }
+                                                    //{% if Perm['report data'] %}
+                                                    ,
+                                                    {
+                                                        cols: [
+                                                            //{% if Perm['stock management'] %}
+                                                            {
+                                                                view: "button",
+                                                                css: "webix_primary",
+                                                                value: "Create product",
+                                                                click: function () {
+                                                                    $$('createProductModal').show();
+                                                                }
+                                                            },
+                                                            //{% endif %}
+                                                            {
+                                                                view: "button",
+                                                                css: "webix_primary",
+                                                                value: "Create Arrival Report",
+                                                                click: function () {
+                                                                    $$('arrivalItemsDatatable').showOverlay("No items added yet.");
+                                                                    $$('arrivalReportModal').show();
+                                                                }
+                                                            },
+                                                            {
+                                                                view: "button",
+                                                                css: "webix_primary",
+                                                                value: "Create Shipment Report",
+                                                                click: function () {
+                                                                    $$('shipmentModal').show();
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                    // {% endif %}
+                                                    ,
+                                                    {
+                                                        cols: [
+                                                            {
+                                                                view: "button",
+                                                                css: "webix_primary",
+                                                                value: "See Product Log",
+                                                                click: function () {
+                                                                    $$('productLogModal').show();
+                                                                }
+                                                            },
+                                                            {
+                                                                view: "button",
+                                                                css: "webix_primary",
+                                                                value: " See Arrival Log",
+                                                                click: function () {
+                                                                    $$('arrivalLogModal').show();
+                                                                }
+                                                            },
+                                                            {
+                                                                view: "button",
+                                                                css: "webix_primary",
+                                                                value: "See Shipment Log",
+                                                                click: function () {
+                                                                    $$('shipmentLogModal').show();
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                view: "datatable",
+                                                id: "productInventoryTable",
+                                                height: 570,
+                                                columns: [
+                                                    {
+                                                        id: "inventoryId",
+                                                        name: "_id",
+                                                        width: 100,
+                                                        header: "ID",
+                                                        template: function (obj) {
+                                                            if (obj._id) {
+                                                                return obj._id;
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        id: "productId",
+                                                        name: "productID",
+                                                        width: 200,
+                                                        header: "Product ID",
+                                                        template: function (obj) {
+                                                            if (obj.productID) {
+                                                                return obj.productID;
+                                                            }
+                                                        }
+
+                                                    },
+                                                    {
+
+                                                        id: "quantityNowProduct",
+                                                        name: "quantityNow",
+                                                        width: 150,
+                                                        header: "Qty/Unit Now",
+                                                        template: function (obj) {
+                                                            if (obj.quantityNow) {
+                                                                return obj.quantityNow;
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        id: "latestAcceptedDateProduct",
+                                                        name: "latestAcceptedDate",
+                                                        header: "Last Accepted",
+                                                        width: 215,
+                                                        template: function (obj) {
+                                                            if (obj.latestAcceptedDate) {
+                                                                return obj.latestAcceptedDate;
+                                                            }
+                                                        }
+                                                    }
+                                                ],
+                                                url: "/api/product/inventory"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        view: "datatable",
+                                        id: "productTable",
+                                        height: 700,
+                                        columns: [
+                                            {
+                                                id: "_id",
+                                                width: 100,
+                                                view: "text",
+                                                name: "productId",
+                                                header: "Product ID",
+                                                sort: "string",
+                                            },
+                                            {
+                                                id: "namaProduk",
+                                                width: 200,
+                                                view: "text",
+                                                name: "namaProduk",
+                                                sort: "string",
+                                                header: "Product Name"
+                                            },
+                                            {
+                                                id: "barcodeEAN",
+                                                width: 100,
+                                                view: "text",
+                                                name: "barcodeEAN",
+                                                sort: "string",
+                                                header: "Barcode"
+                                            },
+                                            {
+                                                id: "kategoriProduct",
+                                                header: "Kategori",
+                                                editor: "text",
+                                                name: 'kategoriProduct',
+                                                sort: "string",
+                                                template: function (obj) {
+                                                    if (obj.klasifikasi && obj.klasifikasi.namaKategori) {
+                                                        return obj.klasifikasi.namaKategori;
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                id: "ABCProduct",
+                                                header: "ABC Class",
+                                                editor: "text",
+                                                name: 'ABCProduct',
+                                                sort: "string",
+                                                template: function (obj) {
+                                                    if (obj.klasifikasi && obj.klasifikasi.analisisABC) {
+                                                        return obj.klasifikasi.analisisABC;
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                id: "unitSimpan",
+                                                header: "Store Unit",
+                                                editor: "text",
+                                                name: "unitSimpan",
+                                                sort: "string",
+                                                template: function (obj) {
+                                                    if (obj.satuan && obj.satuan.unitSimpan) {
+                                                        return obj.satuan.unitSimpan
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                id: "statusProduct",
+                                                header: "Status",
+                                                name: "statusProduct",
+                                                sort: "string",
+                                                template: function (obj) {
+                                                    return obj.statusKontrol && obj.statusKontrol.status
+                                                }
+                                            },
+                                            {
+                                                id: "ActionProduct",
+                                                header: "More Options",
+                                                width: 140,
+                                                template: function (obj) {
+                                                    return `<button onclick="Detailfunction('${obj._id}')" style="margin-top:10px !important;">Detail</button>`
+                                                }
+                                            },
+                                        ],
+                                        url: "/api/product",
+                                    }
+                                ]
+
+                            },
+                            {
+                            }
+                            ]
                         }
-                        ]
-                    },
-                    ]
-                },
-                {
-                    view: "toolbar",
-                    css: "showFooter",
-                    padding: 10,
-                    elements: [{},
-                    {},
-                    {
-                        view: "label",
-                        label: "",
-                        css: "logo",
-                        width: 175,
-                        height: 30,
-                        type: "webix_secondary"
                     }
                     ]
                 }
@@ -725,8 +719,7 @@
                                     webix.message({ text: "Sending Data", expire: 1000 });
                                     webix.ajax()
                                         .headers({ 'Content-Type': 'application/json' })
-                                        .post(
-                                            '/api/product/create', JSON.stringify(sanitizedValues),
+                                        .post('/api/product/create', JSON.stringify(sanitizedValues),
                                             function (text, data) {
                                                 const response = JSON.parse(text);
                                                 if (response.status === 'error') {
