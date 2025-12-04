@@ -3,7 +3,7 @@ from pymongo import UpdateOne
 from common.MongoConnection import *
 from common.login_manager import check_login
 from common.config import *
-from datetime import datetime,timedelta
+from datetime import datetime
 
 def findABC(_int)->str:
     abcRulesset = {
@@ -13,16 +13,16 @@ def findABC(_int)->str:
     }
     return abcRulesset[_int]
 
-def findCategoryName(_int)->list:
-    categoriesRuleset = {
-        '1':['Electronics','ELEC'],
-        '2':['Apparels','APRL'],
-        '3':['Furnitures','FNTR'],
-        '4':['Healths','HLTH'],
-        '5':['Seasonals','SSNL',],
-        '6':['Consumables','CNSM']
+def rulesetProductCategory(ans)->str:
+    rulset = {
+        '1':'Electronics',
+        '2':'Apparels',
+        '3':'Furnitures',
+        '4':'Healths',
+        '5':'Seasonals',
+        '6':'Consumables'
     }
-    return categoriesRuleset[_int]
+    return rulset[ans]
 
 def findMaxId():
     try:
@@ -43,6 +43,59 @@ def sanitizeForWebix(i):
     for key,value in i.items():
         result[key]=str(value)
     return result
+
+def dashboardDataFetch():
+    _dict = {}
+    _dict['suppliers'] = int(supplierCollection.collection.count_documents({}))
+    _dict['retails'] = int(retailCollection.collection.count_documents({}))
+    _dict['items'] = int(productCollection.collection.count_documents({}))
+    totalPrice = inventoryCountCollection.collection.find_one(sort=[('_id',-1)])['totalPrice']
+    _dict['totalPrice'] = int(0 if totalPrice == [] else totalPrice)
+    return _dict
+
+def totalCountUpdater(value):
+    updating = False
+    logData = {}
+    current_date = datetime.now()
+    formatted_string = current_date.strftime("%d-%m-%Y")
+    logIdGetter = inventoryCountCollection.collection.find_one(sort=[('_id',-1)])
+    if logIdGetter:
+        result = int(logIdGetter['_id'].split('ITMCHRT')[1])
+        result = f"ITMCHRT{result+1:010}"
+        totalPrice = list(productInventoryCollection.collection.find({},{"latestStoredPrice": 1,"_id":0}))
+        if totalPrice:
+            totalPrice = sum([x.get("latestStoredPrice") for x in totalPrice])
+        if logIdGetter['date'] == formatted_string:
+            updating=True
+    else:
+        result = "ITMCHRT000000001"
+    if not updating:
+        if logIdGetter:
+                if int(logIdGetter['totalItems'])<value:
+                    return False
+                logData = {
+                    "_id":result,
+                    "totalItems":int(logIdGetter['totalItems'])-value,
+                    "date": formatted_string,
+                    'totalPrice':totalPrice
+                }
+        else:
+                if 0<value:
+                    return False
+                logData = {
+                    "_id":result,
+                    "totalItems":-value,
+                    "date": formatted_string,
+                    "totalPrice":totalPrice
+                }
+        itemLog = inventoryCountCollection.collection.insert_one(logData)
+    else:
+        itemLog = inventoryCountCollection.collection.update_one({'_id':logIdGetter['_id']},{'$inc':{'totalItems':value},'$set':{'totalPrice':totalPrice}})
+    if itemLog:
+        return True
+    return False
+
+
 
 API_BP = Blueprint('api',__name__,url_prefix='/api/')
 
@@ -95,7 +148,6 @@ def rolesGetter():
             return jsonify({'status':'error','text':f'Error at adding roles {e}'}),500
     return list(roleCollection.collection.find())
 
-
 @API_BP.route('/roles/update',methods=['PATCH'])
 def updateRole():
     auth_check  = check_login()
@@ -114,14 +166,17 @@ def updateRole():
         uniqueRoleCheckerPerm = roleCollection.collection.find_one({'permission':formData['permission']})
         if uniqueRoleChecker and uniqueRoleChecker['_id'] != formData['_id']:
             return jsonify({'message':'roles with the same name already exist','status':'error'}),403
-        if uniqueRoleCheckerPerm and uniqueRoleCheckerPerm['_id'] != formData['_id']:
+        if uniqueRoleCheckerPerm and uniqueRoleCheckerPerm['_id']!= formData['_id']:
             return jsonify({'message':'roles with the same rules already exist','status':'error'}),403
+        if int(formData['role-salary'])<0:
+            return jsonify({'message':'salary cannot go below 0!','status':'error'}),403
         dataId =  formData.get('_id')
         roleUpdater = roleCollection.collection.update_one({'_id':dataId},{'$set':formData})
         if roleUpdater:
             return jsonify({"message": "updated successfully","status": "ok"}),202
         return jsonify({"message":'Error at editing roles',"status":"error"}),500
     except Exception as e:
+        print(e)
         return jsonify({"message":f'error editing: {e}',"status":"error"}),500
 
 @API_BP.route('/roles/delete',methods=['DELETE'])
@@ -172,10 +227,8 @@ def get_product_detail():
 @API_BP.route('/product/log', methods=['GET'])
 def productLog():
     res = list(productLogCollection.collection.find())
-    offset = timedelta(hours=7)
     for i in res:
         i['_id']=str(i['_id'])
-        i['at']+=offset
     return jsonify(res)
 
 @API_BP.route('/product/create',methods=['POST'])
@@ -190,7 +243,6 @@ def productCreator():
     try:
         formData = request.get_json()
         format = {}
-        category = findCategoryName(formData['klasifikasi.namaKategori'])
         abc = findABC(formData['klasifikasi.analisisABC'])
         newId = findMaxId()
         newId+=1
@@ -202,8 +254,7 @@ def productCreator():
         else:
             newIdInv = "INV0001"
         klasifikasi = {
-            'kodeKategori':category[1],
-            'namaKategori':category[0],
+            'namaKategori':rulesetProductCategory(formData['klasifikasi.namaKategori']),
             'analisisABC':abc,
         }
         satuan = {
@@ -211,13 +262,15 @@ def productCreator():
             'unitSimpan':formData['satuan.unitSimpan'],
         }
         logistik = {
-            'referensiDimensiUnitSimpanCM_PLT':formData['logistik.referensiDimensiUnitSimpanCM_PLT']
+            'referensiDimensiUnitSimpanCM_PLT':formData['logistik.referensiDimensiUnitSimpanCM_PLT'],
+            'buyPrice':formData['logistik.buyPrice'],
+            'sellPrice':formData['logistik.sellPrice']
         }
         statusKontrol = {
             'status':'Aktif',
             'tglDibuat':datetime.now()
         }
-  
+
         format = {
             '_id':formData['_id'],
             'barcodeEAN':formData['barcodeEAN'],
@@ -242,7 +295,7 @@ def productCreator():
             "quantityNow":0,
             "primaryLocation":"-",
             "latestAcceptedDate":"-",
-
+            'latestStoredPrice':0
         })
         print(format,log,firstInv)
         if input and log and firstInv:
@@ -266,11 +319,11 @@ def updateProduct():
         return jsonify({'error':'No Access'}),401
     try:
         data = request.get_json()
-        category = findCategoryName(data['klasifikasi.namaKategori'])
+        if "" in list(data.values()):
+            return jsonify({'status':'error'}),400
         abc = findABC(data['klasifikasi.analisisABC'])
         klasifikasi = {
-            'kodeKategori':category[1],
-            'namaKategori':category[0],
+            'namaKategori':rulesetProductCategory(data['klasifikasi.namaKategori']),
             'analisisABC':abc,
         }
         satuan = {
@@ -278,7 +331,9 @@ def updateProduct():
             'unitSimpan':data['satuan.unitSimpan'],
         }
         logistik = {
-            'referensiDimensiUnitSimpanCM_PLT':data['logistik.referensiDimensiUnitSimpanCM_PLT']
+            'referensiDimensiUnitSimpanCM_PLT':data['logistik.referensiDimensiUnitSimpanCM_PLT'],
+            'buyPrice':data['logistik.buyPrice'],
+            'sellPrice':data['logistik.sellPrice']
         }
         statusKontrol = {
             'status': "Aktif" if data['statusKontrol.status'] == "1" else "Non-Aktif",
@@ -295,7 +350,6 @@ def updateProduct():
             'logistik':logistik,
             'statusKontrol':statusKontrol
         }
-        
         result = productCollection.collection.update_one({'_id':data['_id']},{'$set':format})
         log = productLogCollection.collection.insert_one({
             'by':g.user['id'],
@@ -303,12 +357,17 @@ def updateProduct():
             'for':data['_id'],
             'at':datetime.now()
         })
+        productInStock = productInventoryCollection.collection.find_one({'productID':data['_id']})
+        newPrice = int(data['logistik.buyPrice'])*productInStock['quantityNow']
+        productInventoryCollection.collection.update_one({'productID':data['_id']},{'$set':{'latestStoredPrice':newPrice}})
+        totalCountUpdater(0)
         if result and log:
             print("kok ndak kesini?")
             return jsonify({'status':'success','message':'successfuly updating data'}),201
         else:
             return jsonify({'status':'error','message':'Error at updating data'}),500
     except Exception as e:
+        print(e)
         return jsonify({'status':'error','message':f'Error: {e}'}),500
     
 @API_BP.route('product/delete',methods=['DELETE'])
@@ -323,6 +382,7 @@ def deleteProduct():
     try:
         deletionData = request.get_json()
         deletionData = deletionData['_id']
+        itemsQty = int(productInventoryCollection.collection.find_one({'productID':deletionData})['quantityNow'])
         result = productCollection.collection.delete_one({'_id':deletionData})
         log = productLogCollection.collection.insert_one({
             'by':g.user['id'],
@@ -331,7 +391,9 @@ def deleteProduct():
             'at':datetime.now()
         })
         delInv = productInventoryCollection.collection.delete_one({"productID":deletionData})
-        if result and log and delInv:
+        print('372')
+        reduceTotal = totalCountUpdater(-itemsQty)
+        if result and log and delInv and reduceTotal:
             return jsonify({'status':'success','message':'successfuly delete data'}),201
         else:
             return jsonify({'status':'error','message':'fail at deleting product'}),500
@@ -413,12 +475,22 @@ def arrivalReportCreator():
         data['receivedBy'] = g.user['id']
         #print(data['product'][0]['status']) <- way to parse (one try mantap jir)
         data['arrivalDate'] = now
+        counter = 0
+        totalCount = 0
         for i in data['product']:
             i['id']=newId+i['id']
+            i['buyPrice'] = productCollection.collection.find_one({'_id':i['productId']})
+            if i['buyPrice']:
+                i['buyPrice']=i['buyPrice']['logistik']['buyPrice']
             if int(i['receivedQuantity'])>0:
-                productInventoryCollection.collection.update_one({'productID':i['productId']},{'$inc':{'quantityNow':int(i['receivedQuantity'])},'$set':{'latestAcceptedDate':now}})
+                counter+=int(i['receivedQuantity'])
+                i['subtotalPrice'] = int(i['buyPrice'])*int(i['receivedQuantity'])
+                totalCount+=i['subtotalPrice']
+                productInventoryCollection.collection.update_one({'productID':i['productId']},{'$inc':{'quantityNow':int(i['receivedQuantity']),'latestStoredPrice':int(i['subtotalPrice'])},'$set':{'latestAcceptedDate':now}})
             else:
                 return jsonify({'status':'error'}),400
+        data['totalPrice'] = totalCount
+        totalCountUpdater(counter)
         result = arrivalCollection.collection.insert_one(data)
         if result:
             return jsonify({'status':'success'}),200
@@ -468,22 +540,25 @@ def createShipment():
     if not AuthRole:
         return jsonify({'error':'No Access'}), 401
     try:
+        
         data = request.get_json()
-        requested_product_ids = [x['productId'] for x in data['product']]
+        reqProductId = [x['productId'] for x in data['product']]
         inventoryNow = list(productInventoryCollection.collection.find(
-            {'productID': {'$in': requested_product_ids}}
+            {'productID': {'$in': reqProductId}}
         ))
         inventoryChecker = {item['productID']: item.get('quantityNow', 0) for item in inventoryNow}
+        
         for item in data['product']:
             p_id = item['productId']
             req_qty = int(item['shippedQuantity'])
             available_qty = inventoryChecker.get(p_id, 0)
-
+            
             if available_qty < req_qty:
                 return jsonify({
                     'status': 'error',
                     'message': f'Insufficient stock for Product {p_id}. Available: {available_qty}, Requested: {req_qty}'
                 }), 400
+        
         newId_doc = shipmentCollection.collection.find_one(sort=[("_id", -1)])
         if newId_doc:
             current_num = int(newId_doc['_id'].split('SHP')[1]) + 1
@@ -495,22 +570,27 @@ def createShipment():
         data['createdBy'] = g.user['id']
         retailLocation = retailCollection.collection.find_one({'_id': data['retailId']})['retailAddress']
         data['address'] = retailLocation
-        updatedItem = [
-            UpdateOne(
-                {'productID': x['productId']},
-                {'$inc': {'quantityNow': -int(x['shippedQuantity'])}}
-            ) for x in data['product']
-        ]
-        productInventoryCollection.collection.bulk_write(updatedItem)
+
+        counter = 0
+        for _ in data['product']:
+            counter+=int(_['shippedQuantity'])
+        totalCount=0
+        totalBuyCount=0 
         for i in data['product']:
             if 'id' in i: 
                 i['id'] = newId + i['id']
+                fetchDataLogistik = productCollection.collection.find_one({'_id':i['productId']})['logistik']
+                i['sellPrice'] = fetchDataLogistik['sellPrice']
+                i['subtotalPrice'] = int(i['sellPrice'])*int(i['shippedQuantity'])
+                totalBuyCount+= int(fetchDataLogistik['buyPrice'])*int(i['shippedQuantity'])
+                productInventoryCollection.collection.update_one({'productID': i['productId']},{'$inc': {'quantityNow': -int(i['shippedQuantity']),'latestStoredPrice':-int(i['subtotalPrice'])}})
+                totalCount+=i['subtotalPrice']
+        data['totalPrice'] = totalCount
         send = shipmentCollection.collection.insert_one(data)
-
-        if send:
+        itemLog = totalCountUpdater(-counter)
+        if send and itemLog:
             return jsonify({'status': 'success', 'shipmentId': newId}), 201
         return jsonify({'status': 'error'}), 400
-
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 400
@@ -544,15 +624,15 @@ def supplyCreator():
             newId = supplierCollection.collection.find_one(sort=[('_id',-1)])
             if newId:
                 newId = int(newId['_id'].split("SUPP")[1])
-                newId = f"SUPP{newId+1:03}"
+                newId = f"SUPP{newId+1:04}"
             else:
-                newId = "R0001"
+                newId = "SUPP0001"
             data['_id'] = newId
             data['createdAt'] = datetime.now()
             supplierCollection.collection.insert_one(data)
             return jsonify({
                 'status':'success',
-                'text':'success'
+                'message':'success'
             }),201
     except Exception as e:
         print(e)
@@ -584,13 +664,13 @@ def retailCreator():
             retailCollection.collection.insert_one(data)
             return jsonify({
                 'status':'success',
-                'text':'success'
+                'message':'success'
             }),201
     except Exception as e:
         print(e)
         return jsonify({
             'status':'error',
-            'text':e
+            'message':e
         }),400
     
 @API_BP.route('/retailSupply/supplierUpdater',methods=['POST'])
@@ -615,11 +695,11 @@ def supplierUpdater():
                 {'$set':updateData}
             )
             if result:
-                return jsonify({'status':'success','text':'data updated'}),200
-        return jsonify({'status':'error','text':'unknown error'}),500
+                return jsonify({'status':'success'}),200
+        return jsonify({'status':'error'}),500
     except Exception as e:
         print(f"Error update: {e}")
-        return jsonify({"status":"error","text":str(e)}),500
+        return jsonify({"status":"error"}),500
     
 @API_BP.route('/retailSupply/retailUpdater',methods=['POST'])
 def retailUpdater():
@@ -643,11 +723,11 @@ def retailUpdater():
                 {'$set':updateData}
             )
             if result:
-                return jsonify({'status':'success','text':'data updated'}),200
-        return jsonify({'status':'error','text':'unknown error'}),500
+                return jsonify({'status':'success'}),200
+        return jsonify({'status':'error'}),500
     except Exception as e:
         print(f"Error update: {e}")
-        return jsonify({"status":"error","text":str(e)}),500
+        return jsonify({"status":"error"}),500
     
 @API_BP.route('/retailSupply/supplierDeleter',methods=['DELETE'])
 def supplierDelete():
@@ -662,11 +742,11 @@ def supplierDelete():
         data = request.get_json()
         result = supplierCollection.collection.delete_one({'_id':data['_id']})
         if result:
-            return jsonify({'status':'success','text':'data deleted'}),200
-        return jsonify({'status':'error','text':'unknown error'}),500
+            return jsonify({'status':'success','message':'data deleted'}),200
+        return jsonify({'status':'error','message':'unknown error'}),500
     except Exception as e:
         print(f"Error delete: {e}")
-        return jsonify({"status":"error","text":str(e)}),500
+        return jsonify({"status":"error","message":str(e)}),500
     
 @API_BP.route('/retailSupply/retailDeleter',methods=['DELETE'])
 def retailDelete():
@@ -681,8 +761,48 @@ def retailDelete():
         data = request.get_json()
         result = retailCollection.collection.delete_one({'_id':data['_id']})
         if result:
-            return jsonify({'status':'success','text':'data deleted'}),200
-        return jsonify({'status':'error','text':'unknown error'}),500
+            return jsonify({'status':'success','message':'data deleted'}),200
+        return jsonify({'status':'error','message':'unknown error'}),500
     except Exception as e:
         print(f"Error delete: {e}")
-        return jsonify({"status":"error","text":str(e)}),500
+        return jsonify({"status":"error","message":str(e)}),500
+    
+@API_BP.route('/locationSetter',methods=['POST'])
+def locationSetter():
+    auth_check = check_login()
+    if auth_check:
+        print("tidak")
+        return auth_check
+    AuthRole = roleCollection.collection.find_one({'_id':g.user['role']})['permission']['report data']
+    if not AuthRole:
+        return jsonify({'error':'No Access'}), 401
+    try:
+        data = request.form
+        dataId = data.get('_id')
+        if data.get('webix_operation') == 'update':
+            updateData = {}
+            for key,value in data.items():
+                if key not in ['id','webix_operation','targetId','_id','productID','quantityNow','latestAcceptedDate','latestStoredPrice']:
+                    updateData[key] = value
+            result = productInventoryCollection.collection.update_one(
+                {'_id':dataId},
+                {'$set':updateData}
+            )
+            if result:
+                return jsonify({'status':'success'}),200
+        return jsonify({'status':'error'}),500
+    except Exception as e:
+        print(f"Error update: {e}")
+        return jsonify({"status":"error"}),500
+    
+@API_BP.route('/dashboard-counter',methods=['GET'])
+def itemCounterGetter():
+    auth_check = check_login()
+    if auth_check:
+        print("tidak")
+        return auth_check
+    try:
+        return list(inventoryCountCollection.collection.find())
+    except Exception as e:
+        print(e)
+        jsonify({'status':'error'}),500

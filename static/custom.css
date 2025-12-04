@@ -62,11 +62,11 @@
 }
 
 .webix_button:hover {
-  background: #fda31c !important;
+  background: #fda31c;
 }
 
 .webix_button:active {
-  background: #b67513 !important;
+  background: #b67513;
 }
 
 .webix_el_search input {
@@ -160,4 +160,65 @@
   background-position: center;
   background-size: 100%;
   background-repeat: no-repeat;
+}
+
+.testing .webix_el_box {
+  font-size: 35px !important;
+  font-weight: bold !important;
+  color: #14406c !important;
+  display: flex !important;
+  align-items: center !important;
+  line-height: normal !important;
+  border: 3px groove #14406c1c !important;
+}
+
+.usernameAndRole {
+  padding: 10px 0px !important;
+}
+
+.index-icon {
+  font-size: 60px !important;
+}
+
+.index-icon2 {
+  font-size: 60px !important;
+}
+
+.text {
+  font-size: 20px !important;
+  margin-top: -15px;
+}
+.testing2 .webix_el_box {
+  font-size: 40px !important; /* Adjust size here */
+  font-weight: bold !important;
+  color: #14406c !important;
+  border: 3px groove #14406c1c !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  line-height: normal !important;
+}
+
+.testing2:hover {
+  background-color: #dadada;
+}
+
+.webix_button:hover .testing2 {
+  background-color: grey !important;
+}
+
+.webix_toolbar .webix_el_label .webix_el_box {
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475466;
+  letter-spacing: 0px;
+}
+
+.headers-Chart {
+  font-size: 25px !important;
+  color: #14406c !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
 }

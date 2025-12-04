@@ -145,7 +145,9 @@
                         "statusKontrol.status": statusToId[data.statusKontrol.status],
                         "satuan.unitJual": data.satuan.unitJual,
                         "satuan.unitSimpan": data.satuan.unitSimpan,
-                        "logistik.referensiDimensiUnitSimpanCM_PLT": data.logistik.referensiDimensiUnitSimpanCM_PLT
+                        "logistik.referensiDimensiUnitSimpanCM_PLT": data.logistik.referensiDimensiUnitSimpanCM_PLT,
+                        "logistik.buyPrice": data.logistik.buyPrice,
+                        "logistik.sellPrice": data.logistik.sellPrice
                     };
                     form.parse(flatData);
 
@@ -170,7 +172,7 @@
                 "namaProduk", "barcodeEAN", "deskripsi", "merk",
                 "klasifikasi.namaKategori", "klasifikasi.analisisABC",
                 "satuan.unitJual", "satuan.unitSimpan",
-                "logistik.referensiDimensiUnitSimpanCM_PLT"
+                "logistik.referensiDimensiUnitSimpanCM_PLT", "logistik.sellPrice", 'logistik.buyPrice'
             ];
 
             stringKeys.forEach(key => {
@@ -239,68 +241,50 @@
                         },
                         {
                             margin: 5,
-                            cols: [
-                                {
-                                    view: "button",
-                                    value: "Reset Password",
-                                    css: "webix_primary",
-                                    click: function () {
-                                        const form = $$('resetPasswordForm');
-                                        if (!form.validate()) {
-                                            webix.message({
-                                                type: "error",
-                                                text: "All fields must be filled correctly."
-                                            });
-                                            return;
-                                        }
-                                        const values = form.getValues();
-                                        if (values.newPassword !== values.checkPassword) {
-                                            webix.message({
-                                                type: "error",
-                                                text: "Passwords do not match."
-                                            });
-                                            return;
-                                        }
-                                        webix.ajax()
-                                            .headers({ 'Content-Type': 'application/json' })
-                                            .patch('/users/api/resetPassword', JSON.stringify({ _id: first, newPassword: values.newPassword }),
-                                                function (text, data) {
-                                                    const response = JSON.parse(text);
-                                                    if (response.status === "error") {
-                                                        webix.message({
-                                                            type: "error",
-                                                            text: "Error: " + response.text
-                                                        });
-                                                    } else {
-                                                        webix.message('Password successfully changed');
-                                                        $$('updatePasswordFirstTime').close();
-                                                    }
-                                                }
-                                            )
-                                            .fail(function (xhr) {
-                                                console.log(xhr.status);
-                                                if (xhr.status === 403) {
-                                                    webix.message({
-                                                        type: "error",
-                                                        text: "No Access to reset password!"
-                                                    })
-                                                } else {
-                                                    webix.message({
-                                                        type: "error",
-                                                        text: "Error at resetting password!"
-                                                    })
-                                                }
-                                            })
-                                    }
-                                },
-                                {
-                                    view: "button",
-                                    value: "Cancel",
-                                    click: function () {
-                                        $$('updatePasswordFirstTime').close();
-                                    }
+                            view: "button",
+                            value: "Reset Password",
+                            css: "webix_primary",
+                            click: function () {
+                                const form = $$('resetPasswordForm');
+                                if (!form.validate()) {
+                                    webix.message({
+                                        type: "error",
+                                        text: "All fields must be filled correctly."
+                                    });
+                                    return;
                                 }
-                            ]
+                                const values = form.getValues();
+                                if (values.newPassword !== values.checkPassword) {
+                                    webix.message({
+                                        type: "error",
+                                        text: "Passwords do not match."
+                                    });
+                                    return;
+                                }
+                                webix.ajax()
+                                    .headers({ 'Content-Type': 'application/json' })
+                                    .patch('/users/api/resetPassword', JSON.stringify({ _id: first, newPassword: values.newPassword }),
+                                        function (text, data) {
+                                            const response = JSON.parse(text);
+                                            if (response.status === "error") {
+                                                webix.message({
+                                                    type: "error",
+                                                    text: "Error: " + response.text
+                                                });
+                                            } else {
+                                                webix.message('Password successfully changed');
+                                                $$('updatePasswordFirstTime').close();
+                                            }
+                                        }
+                                    )
+                                    .fail(function (xhr) {
+                                        console.log(xhr.status);
+                                        webix.message({
+                                            type: "error",
+                                            text: "Error at resetting password!"
+                                        })
+                                    })
+                            }
                         },
                         {
                             view: "label",
@@ -344,17 +328,14 @@
                     {},
                     {},
                     {},
+                    {},
+                    {},
+                    {},
                     {
                         view: "label",
-                        width: 150,
-                        label: "Hello! {{name}}",
-                        autowidth: true
-                    },
-                    {
-                        view: "label",
-                        width: 100,
-                        label: "As {{role}}",
-                        labelWidth: "auto"
+                        width: 170,
+                        label: "Hello! {{name}} As {{role}}",
+                        autowidth: true,
                     },
                     {
                         view: "button",
@@ -364,8 +345,9 @@
                             window.location.href = '/users/logout';
                         }
                     },
-                    {}
-
+                    {
+                        width: 10
+                    }
                     ]
                 },
                 {
@@ -380,17 +362,22 @@
                             id: "dashboard",
                             icon: "mdi mdi-home",
                             value: "Dashboard"
-                        }
-                            //{% if Perm['retail and shipment'] %}
-                            ,
+                        },
+                        // {% if Perm['retail and shipment']%}
                         {
                             id: "supplyAndRetailManagement",
                             icon: "mdi mdi-city",
                             value: "Supply and Retail Management",
-                        }
-                            // {% endif %}
-                            // {% if Perm['account management'] %}
-                            ,
+                        },
+                        // {% endif %}
+                        // {% if Perm['stock management'] %}
+                        {
+                            id: "product_management",
+                            icon: "mdi mdi-archive",
+                            value: "Products management"
+                        },
+                        // {% endif %}
+                        // {% if Perm['account management'] %}
                         {
                             id: "users_management",
                             icon: "mdi mdi-account-supervisor",
@@ -400,7 +387,7 @@
                         ]
                     },
                     {
-                        view: "scrollview", // 1. Define as scrollview
+                        view: "scrollview",
                         scroll: "y",
                         body: {
                             type: "clean",
@@ -507,6 +494,9 @@
                                             {
                                                 view: "datatable",
                                                 id: "productInventoryTable",
+                                                editable: true,
+                                                save: "/api/locationSetter",
+                                                scroll: "xy",
                                                 height: 570,
                                                 columns: [
                                                     {
@@ -514,6 +504,7 @@
                                                         name: "_id",
                                                         width: 100,
                                                         header: "ID",
+                                                        readonly: true,
                                                         template: function (obj) {
                                                             if (obj._id) {
                                                                 return obj._id;
@@ -525,6 +516,7 @@
                                                         name: "productID",
                                                         width: 200,
                                                         header: "Product ID",
+                                                        readonly: true,
                                                         template: function (obj) {
                                                             if (obj.productID) {
                                                                 return obj.productID;
@@ -538,9 +530,37 @@
                                                         name: "quantityNow",
                                                         width: 150,
                                                         header: "Qty/Unit Now",
+                                                        readonly: true,
                                                         template: function (obj) {
                                                             if (obj.quantityNow) {
+                                                                if (obj.quantityNow < 10) {
+                                                                    return `<span style="color: red;">${obj.quantityNow}</span>`
+                                                                }
                                                                 return obj.quantityNow;
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        id: "latestStoredPrice",
+                                                        name: "quantityNow",
+                                                        width: 120,
+                                                        header: "Stored Price",
+                                                        readonly: true,
+                                                        template: function (obj) {
+                                                            if (obj.latestStoredPrice) {
+                                                                return obj.latestStoredPrice;
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        id: "primaryLocation",
+                                                        name: "primaryLocation",
+                                                        editor: "text",
+                                                        width: 140,
+                                                        header: "Stored Location",
+                                                        template: function (obj) {
+                                                            if (obj.primaryLocation) {
+                                                                return obj.primaryLocation;
                                                             }
                                                         }
                                                     },
@@ -548,6 +568,7 @@
                                                         id: "latestAcceptedDateProduct",
                                                         name: "latestAcceptedDate",
                                                         header: "Last Accepted",
+                                                        readonly: true,
                                                         width: 215,
                                                         template: function (obj) {
                                                             if (obj.latestAcceptedDate) {
@@ -590,7 +611,7 @@
                                                 header: "Barcode"
                                             },
                                             {
-                                                id: "kategoriProduct",
+                                                id: "klasifikasi",
                                                 header: "Kategori",
                                                 editor: "text",
                                                 name: 'kategoriProduct',
@@ -620,9 +641,7 @@
                                                 name: "unitSimpan",
                                                 sort: "string",
                                                 template: function (obj) {
-                                                    if (obj.satuan && obj.satuan.unitSimpan) {
-                                                        return obj.satuan.unitSimpan
-                                                    }
+                                                    return obj.satuan.unitSimpan;
                                                 }
                                             },
                                             {
@@ -631,7 +650,7 @@
                                                 name: "statusProduct",
                                                 sort: "string",
                                                 template: function (obj) {
-                                                    return obj.statusKontrol && obj.statusKontrol.status
+                                                    return obj.statusKontrol.status;
                                                 }
                                             },
                                             {
@@ -673,6 +692,8 @@
                             "merk": webix.rules.isNotEmpty,
                             "satuan.unitJual": webix.rules.isNotEmpty,
                             "satuan.unitSimpan": webix.rules.isNotEmpty,
+                            "logistik.sellPrice": isNotEmptyAndNotNegative,
+                            "logistik.buyPrice": isNotEmptyAndNotNegative
                         },
                         elements: [
                             { view: "text", name: "_id", hidden: true },
@@ -695,6 +716,8 @@
 
 
                             { view: "text", labelWidth: 270, label: "Reference Unit dimension CM (LWH)", name: "logistik.referensiDimensiUnitSimpanCM_PLT", placeholder: "e.g., 100x50x30", invalidMessage: "Must be in LxWxH format (e.g., 100x50x30)", required: true },
+                            { view: "text", labelWidth: 270, label: "Buy Price", name: "logistik.buyPrice", placeholder: "insert buy price", invalidMessage: "please Input buy price correctly!", required: true },
+                            { view: "text", labelWidth: 270, label: "Sell Price", name: "logistik.sellPrice", placeholder: "insert sell price", invalidMessage: "please Input sell price correctly!", required: true },
                             {}
                         ]
                     },
@@ -795,7 +818,7 @@
                                 label: "Purchased Order Number",
                                 labelWidth: 200,
                                 required: true,
-                                invalidMessage: "Purchase order number is required"
+                                invalidMessage: "Purchase order number is required", attributes: { maxlength: 40 }
                             },
                             {
                                 id: "supplierId",
@@ -869,12 +892,20 @@
                                         allProductOptions.filter(function (option) {
                                             return !usedIds.has(option.id);
                                         });
+
                                     },
                                     onAfterEditStop: function () {
                                         allProductOptions.filter();
                                     },
                                     onEditorChange: function () {
                                         allProductOptions.filter();
+                                    },
+                                    onAfterEditStart: function (id) {
+                                        const editor = this.getEditor(id);
+                                        if (editor && editor.config.editor === "text") {
+                                            const inputNode = editor.getInputNode();
+                                            inputNode.setAttribute("maxlength", 20);
+                                        }
                                     }
                                 },
                                 columns: [
@@ -1002,11 +1033,11 @@
                             "logistik.referensiDimensiUnitSimpanCM_PLT": webix.rules.isDimension,
                         },
                         elements: [
-                            { labelWidth: 230, view: "text", label: "Product ID", name: "_id", readonly: true },
-                            { labelWidth: 230, view: "text", label: "Product Name", name: "namaProduk", required: true, invalidMessage: "Product name is required" },
-                            { labelWidth: 230, view: "text", label: "Barcode (EAN)", name: "barcodeEAN", required: true, invalidMessage: "Barcode is required" },
-                            { labelWidth: 230, view: "textarea", label: "Description", name: "deskripsi", height: 100, required: true, invalidMessage: " Description is required" },
-                            { labelWidth: 230, view: "text", label: "Brand", name: "merk" },
+                            { labelWidth: 230, view: "text", label: "Product ID", name: "_id", readonly: true, attributes: { maxlength: 40 } },
+                            { labelWidth: 230, view: "text", label: "Product Name", name: "namaProduk", required: true, invalidMessage: "Product name is required", attributes: { maxlength: 40 } },
+                            { labelWidth: 230, view: "text", label: "Barcode (EAN)", name: "barcodeEAN", required: true, invalidMessage: "Barcode is required", attributes: { maxlength: 40 } },
+                            { labelWidth: 230, view: "textarea", label: "Description", name: "deskripsi", height: 100, required: true, invalidMessage: " Description is required", attributes: { maxlength: 40 } },
+                            { labelWidth: 230, view: "text", label: "Brand", name: "merk", attributes: { maxlength: 40 }, required: true, invalidMessage: " Brand is required" },
                             {
                                 labelWidth: 230,
                                 view: "richselect",
@@ -1031,9 +1062,11 @@
                                 options: abcOptions,
                                 required: true
                             },
-                            { labelWidth: 230, view: "text", label: "Sell Unit", name: "satuan.unitJual", required: true, invalidMessage: "Sell unit is required" },
-                            { labelWidth: 230, view: "text", label: "Store Unit", name: "satuan.unitSimpan", required: true, invalidMessage: "Store unit is required" },
-                            { labelWidth: 230, view: "text", label: "Reference Unit Dimension in CM", name: "logistik.referensiDimensiUnitSimpanCM_PLT", placeholder: "e.g., 100x50x30", invalidMessage: "Must be in LxWxH format", required: true, invalidMessage: "Dimension Reference is required" },
+                            { labelWidth: 230, view: "text", label: "Sell Unit", name: "satuan.unitJual", required: true, invalidMessage: "Sell unit is required", attributes: { maxlength: 40 } },
+                            { labelWidth: 230, view: "text", label: "Store Unit", name: "satuan.unitSimpan", required: true, invalidMessage: "Store unit is required", attributes: { maxlength: 40 } },
+                            { labelWidth: 230, view: "text", label: "Sell Price", name: "logistik.sellPrice", required: true, invalidMessage: "Sell Price is required", attributes: { maxlength: 40 } },
+                            { labelWidth: 230, view: "text", label: "Buy Price", name: "logistik.buyPrice", required: true, invalidMessage: "Buy Price is required", attributes: { maxlength: 40 } },
+                            { labelWidth: 230, view: "text", label: "Reference Unit Dimension in CM", name: "logistik.referensiDimensiUnitSimpanCM_PLT", placeholder: "e.g., 100x50x30", invalidMessage: "Must be in LxWxH format", required: true, invalidMessage: "Dimension Reference is required", attributes: { maxlength: 40 } },
                             {}
                         ]
                     },
@@ -1123,13 +1156,14 @@
             var arrivalLogModalBox = {
                 view: "datatable",
                 id: "arrivalLogDatatable",
-                scroll: "y",
+                scroll: "xy",
                 columns: [
                     { id: '_id', width: 100, header: "id", name: "_id", sort: "string" },
                     { id: "purchaseOrderNumber", width: 200, header: "Purchase Order Number", name: "purchaseOrderNumber", sort: "string" },
                     { id: "supplierId", width: 120, header: "Supplier ID", name: "supplierId", sort: "string" },
                     { id: "receivedBy", width: 140, header: "Received By", name: "receivedBy", sort: "string" },
                     { id: "arrivalDate", width: 200, header: "Arrival Date", name: "arrivalDate", sort: "date" },
+                    { id: "totalPrice", header: "Total Buy Price", sort: "string", width: 120 },
                     {
                         id: "itemsButton",
                         header: "Items",
@@ -1143,14 +1177,14 @@
             var arrivalItemBox = {
                 view: "datatable",
                 id: "arrivalItem",
-                scroll: "y",
                 editable: true,
                 columns: [
                     { id: "id", header: "Batch ID", readonly: true, sort: "string", width: 150 },
                     { id: "productId", header: "Product ID", readonly: true, sort: "string" },
                     { id: "receivedQuantity", header: "Received Quantity", readonly: true, sort: "int", width: 150 },
                     { id: "location", header: "Received Stored", readonly: true, sort: "string", width: 150 },
-                    { id: "actualDimensionInCM_LWH", header: "Item Dimension", readonly: true, sort: "string", width: 170 }
+                    { id: "actualDimensionInCM_LWH", header: "Item Dimension", readonly: true, sort: "string", width: 170 },
+                    { id: "arrivedPrice", header: "Arrived Price", readonly: true, sort: "string", width: 180 }
                 ]
             }
             var shipmentModalBox = {
@@ -1172,6 +1206,7 @@
                         labelWidth: 200,
                         required: true,
                         invalidMessage: "Sales order number is required"
+
                     },
                     {
                         cols: [
@@ -1339,8 +1374,6 @@
                             {
                                 view: "button", value: "Create Shipment", css: "webix_primary", click: function () {
                                     $$("shipmentItemsDatatable").editStop();
-
-                                    // require at least one item
                                     var itemsTable = $$("shipmentItemsDatatable");
                                     if (itemsTable.count() === 0) {
                                         webix.message({ type: "error", text: "You must add at least one item." });
@@ -1375,7 +1408,15 @@
                                                 $$('shipmentLogDatatable').load('/api/shipments/log');
                                             })
                                             .fail(function (xhr) {
-                                                webix.message({ type: "error", text: "Shipment creation failed" });
+                                                try {
+                                                    var response = JSON.parse(xhr.responseText);
+                                                    webix.message({
+                                                        type: "error",
+                                                        text: response.message
+                                                    });
+                                                } catch (e) {
+                                                    webix.message({ type: "error", text: "An unexpected error occurred." });
+                                                }
                                             });
                                     }
                                     else {
@@ -1391,7 +1432,6 @@
             var shipmentLogModalBox = {
                 view: "datatable",
                 id: "shipmentLogDatatable",
-                scroll: "y",
                 columns: [
                     {
                         id: "_id",
@@ -1437,6 +1477,12 @@
                         width: 230,
                     },
                     {
+                        id: "totalPrice",
+                        header: "Total Sell Price",
+                        sort: "string",
+                        width: 140
+                    },
+                    {
                         id: "itemsButton",
                         header: "Items",
                         template: function (obj) {
@@ -1449,13 +1495,15 @@
             var shipmentItemModalBox = {
                 view: "datatable",
                 id: "shipmentItemModalDatatable",
-                scroll: "y",
+                scroll: "xy",
                 editable: true,
                 columns: [
                     { id: "id", header: "Batch ID", readonly: true, sort: "string", width: 150 },
                     { id: "productId", header: "Product ID", readonly: true, sort: "string" },
                     { id: "shippedQuantity", header: "Shipped Quantity", readonly: true, sort: "int", width: 150 },
-                    { id: "packageDimensionInCM_LWH", header: "Package Dimension", readonly: true, sort: "string", width: 170 }
+                    { id: "packageDimensionInCM_LWH", header: "Package Dimension", readonly: true, sort: "string", width: 170 },
+                    { id: "sellPrice", header: "Selling Price", readonly: true, width: 130, sort: "string" },
+                    { id: "subtotalPrice", header: "Shipped Price", readonly: true, width: 130, sort: "string" }
                 ]
             }
             var formWindow = webix.ui({
@@ -1513,10 +1561,10 @@
                 $$('log_form').clear();
             };
             if ($$("mainSidebar")) {
-                $$("mainSidebar").select("dashboard");
-
+                $$("mainSidebar").select("product_management");
                 var sidebarRoutes = {
                     dashboard: "/",
+                    product_management: "/management/product",
                     users_management: "/management/users",
                     supplyAndRetailManagement: "/retail-supply"
                 };
@@ -1599,9 +1647,10 @@
                 position: "center",
                 head: "Arrival Log",
                 body: arrivalLogModalBox,
-                width: 900,
+                width: 1020,
                 height: 600,
-                move: true
+                move: true,
+                scroll: "x y",
             })
             var arrivalItemWindow = webix.ui({
                 responsive: true,
@@ -1644,7 +1693,7 @@
                 position: "center",
                 head: "Shipment Log",
                 body: shipmentLogModalBox,
-                width: 1170,
+                width: 1400,
                 height: 600,
                 move: true
             })

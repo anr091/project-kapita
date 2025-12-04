@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.webix.com/edge/webix.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet"
+        type="text/css">
+    <link rel="stylesheet" href="/static/custom.css">
+    <script src="https://cdn.webix.com/edge/webix.js" type="text/javascript"></script>
+    <title>{{title}}</title>
+</head>
+
+<body>
+    <script>
+        var updateRole = false;
+        webix.ready(function () {
+            webix.ui({
+                responsive: true,
+                view: "layout",
+                type: "clean",
+                height: null,
+                rows: [{
+                    view: "toolbar",
+                    height: 65,
+                    padding: 10,
+                    elements: [{
+                        view: "label",
+                        label: "",
+                        css: "logo",
+                        width: 175,
+                        height: 50,
+                        type: "webix_secondary",
+                        click: function () {
+                            window.location.href = "/";
+                        }
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {
+                        view: "label",
+                        width: 170,
+                        label: "Hello! {{name}}",
+                        autowidth: true
+                    },
+                    {
+                        view: "label",
+                        width: 100,
+                        label: "As {{role}}",
+                        autowidth: true
+                    },
+                    {
+                        view: "button",
+                        width: 130,
+                        label: " Logout",
+                        click: function () {
+                            window.location.href = '/users/logout';
+                        }
+                    },
+                    {}
+                    ]
+                },
+                {
+                    cols: [{
+                        view: "sidebar",
+                        id: "mainSidebar",
+                        css: "sidebar-bg",
+                        collapsed: true,
+                        width: 250,
+                        value: "dashboard",
+                        data: [{
+                            id: "dashboard",
+                            icon: "mdi mdi-home",
+                            value: "Dashboard"
+                        },
+                        // {% if Perm['retail and shipment']%}
+                        {
+                            id: "supplyAndRetailManagement",
+                            icon: "mdi mdi-city",
+                            value: "Supply and Retail Management",
+                        },
+                        // {% endif %}
+                        // {% if Perm['stock management'] %}
+                        {
+                            id: "product_management",
+                            icon: "mdi mdi-archive",
+                            value: "Products management"
+                        },
+                        // {% endif %}
+                        // {% if Perm['account management'] %}
+                        {
+                            id: "users_management",
+                            icon: "mdi mdi-account-supervisor",
+                            value: "Users management"
+                        },
+                            // {% endif %}
+                        ]
+                    },
+                    {
+                        view: "scrollview", // 1. Define as scrollview
+                        scroll: "y",
+                        body: {
+                            type: "clean",
+                            paddingX: 30,
+                            rows: [{
+                                height: 70,
+                                cols: [{
+                                    type: "clean",
+                                    template: "<H1>{{title}}</H1>",
+                                    width: 800,
+                                },
+                                {}
+                                ]
+                            },
+                            {
+                                margin: 15,
+                                rows: [
+                                    {
+                                        height: 120,
+                                        margin: 15,
+                                        cols: [
+                                            { view: "label", label: "&nbsp<span class='mdi mdi-truck index-icon'></span> &nbspSuppliers count:&nbsp{{dbDat['suppliers']}}", css: "testing", gravity: 1 },
+                                            { view: "label", label: "&nbsp<span class='mdi mdi-store index-icon'></span> &nbspRetails count:&nbsp{{dbDat['retails']}}", css: "testing", gravity: 1 },
+                                            { view: "label", label: "&nbsp<span class='mdi mdi-archive index-icon'></span> &nbspProducts count:&nbsp{{dbDat['items']}}", css: "testing", gravity: 1 }
+                                        ]
+                                    },
+                                    {
+                                        height: 200,
+                                        margin: 15,
+                                        cols: [
+                                            {
+                                                margin: 10,
+                                                id: "dashboardBtn",
+                                                cols: [
+                                                    //{% if Perm['retail and shipment']%}
+                                                    {
+                                                        id: 'supplyAndRetailManagement', view: "button", label: "<span class='mdi mdi-truck index-icon2 webix_secondary'><p class='text'>Supply and Retail</p></span>", css: "testing2 webix_secondary", gravity: 1, click: function () {
+                                                            window.location.href = "/retail-supply";
+                                                        }
+                                                    },
+                                                    //{% endif %}
+                                                    //{% if Perm['stock management']%}
+                                                    {
+                                                        view: "button", label: "<span class='mdi mdi-store index-icon2'><p class='text'>Product Management</p></span>", css: "testing2 webix_secondary", gravity: 1, click: function () {
+                                                            window.location.href = "/management/product";
+                                                        }
+                                                    },
+                                                    //{% endif %}
+                                                    //{% if Perm['account management']%}
+                                                    {
+                                                        view: "button", label: "<span class='mdi mdi-account-supervisor index-icon2'><p class='text'>User Management</p></span>", css: "testing2 webix_secondary", gravity: 1, click: function () {
+                                                            window.location.href = "/management/users"
+                                                        }
+                                                    },
+                                                    //{% endif %}
+                                                ]
+                                            },
+                                            { view: "label", label: "&nbsp&nbsp<span class='mdi mdi-cash-multiple index-icon'> </span>&nbspStored price total: Rp.{{dbDat['totalPrice']}}", css: "testing", gravity: 1 }
+                                        ]
+                                    },
+                                    {
+                                        height: 400,
+                                        margin: 15,
+                                        cols: [
+                                            {
+                                                type: "clean",
+                                                gravity: 1,
+                                                css: "testing",
+                                                rows: [
+                                                    { view: "template", type: "header", template: "Total Items Statistics", css: "headers-Chart" },
+                                                    {
+                                                        view: 'chart',
+                                                        type: "bar",
+                                                        url: '/api/dashboard-counter',
+                                                        value: "#totalItems#",
+                                                        color: "#14406c",
+                                                        xAxis: {
+                                                            title: "Date",
+                                                            template: "#date#",
+                                                            lines: true
+                                                        },
+                                                        yAxis: {
+                                                            title: "Total Items",
+                                                            lines: true
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                type: "clean",
+                                                gravity: 1,
+                                                css: "testing",
+                                                rows: [
+                                                    { view: "template", type: "header", template: "Stored Price Total Statistics", css: "headers-Chart" },
+                                                    {
+                                                        view: 'chart',
+                                                        type: "bar",
+                                                        url: '/api/dashboard-counter',
+                                                        value: "#totalPrice#",
+                                                        color: "#14406c",
+
+                                                        xAxis: {
+                                                            title: "Date",
+                                                            template: "#date#",
+                                                            lines: true
+                                                        },
+                                                        yAxis: {
+                                                            title: "Total Price",
+                                                            lines: true,
+                                                            offset: 1000,
+                                                            template: function (value) {
+                                                                return value >= 1000 ? (value / 1000) + "k" : value;
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {}
+                            ]
+                        }
+                    }
+                    ]
+                }
+                ]
+            });
+            webix.ui.fullScreen();
+            if ($$('log_form')) {
+                $$('log_form').clear();
+            };
+            if ($$("mainSidebar")) {
+                $$("mainSidebar").select("dashboard");
+
+                var sidebarRoutes = {
+                    dashboard: "/",
+                    product_management: "management/product",
+                    users_management: "/management/users",
+                    supplyAndRetailManagement: "/retail-supply"
+                };
+                $$('dashboardBtn').attachEvent('onAfterSelect', function (id) {
+                    let target = sidebarRoutes[id] || "/";
+                    window.location.href = target;
+                    return true;
+                });
+                $$("mainSidebar").attachEvent("onAfterSelect", function (id) {
+                    var target = sidebarRoutes[id] || "/";
+                    window.location.href = target;
+                    return true;
+
+                });
+            };
+        })
+    </script>
+</body>
+
+</html>

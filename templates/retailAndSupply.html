@@ -28,8 +28,16 @@
                                 webix.message("Supplier deleted successfully");
                                 $$("supplierDatatable").clearAll();
                                 $$("supplierDatatable").load("/api/retailSupply/suppliersGetter");
-                            }).fail(function () {
-                                webix.message({ type: "error", text: "Failed to delete supplier" });
+                            }).fail(function (xhr) {
+                                try {
+                                    var response = JSON.parse(xhr.responseText);
+                                    webix.message({
+                                        type: "error",
+                                        text: response.message
+                                    });
+                                } catch (e) {
+                                    webix.message({ type: "error", text: "An unexpected error occurred." });
+                                }
                             });
                     }
                 }
@@ -48,8 +56,16 @@
                                 webix.message("Retail deleted successfully");
                                 $$("retailDatatable").clearAll();
                                 $$("retailDatatable").load("/api/retailSupply/retailGetter");
-                            }).fail(function () {
-                                webix.message({ type: "error", text: "Failed to delete retail" });
+                            }).fail(function (xhr) {
+                                try {
+                                    var response = JSON.parse(xhr.responseText);
+                                    webix.message({
+                                        type: "error",
+                                        text: response.message
+                                    });
+                                } catch (e) {
+                                    webix.message({ type: "error", text: "An unexpected error occurred." });
+                                }
                             });
                     }
                 }
@@ -88,17 +104,14 @@
                     {},
                     {},
                     {},
+                    {},
+                    {},
+                    {},
                     {
                         view: "label",
                         width: 170,
-                        label: "Hello! {{name}}",
-                        autowidth: true
-                    },
-                    {
-                        view: "label",
-                        width: 100,
-                        label: "As {{role}}",
-                        labelWidth: "auto"
+                        label: "Hello! {{name}} As {{role}}",
+                        autowidth: true,
                     },
                     {
                         view: "button",
@@ -108,7 +121,9 @@
                             window.location.href = '/users/logout';
                         }
                     },
-                    {}
+                    {
+                        width: 10
+                    }
                     ]
                 },
                 {
@@ -124,17 +139,22 @@
                             id: "dashboard",
                             icon: "mdi mdi-home",
                             value: "Dashboard"
-                        }
-                            //{% if Perm['retail and shipment'] %}
-                            ,
+                        },
+                        // {% if Perm['retail and shipment']%}
                         {
                             id: "supplyAndRetailManagement",
                             icon: "mdi mdi-city",
                             value: "Supply and Retail Management",
-                        }
-                            // {% endif %}
-                            // {% if Perm['account management'] %}
-                            ,
+                        },
+                        // {% endif %}
+                        // {% if Perm['stock management'] %}
+                        {
+                            id: "product_management",
+                            icon: "mdi mdi-archive",
+                            value: "Products management"
+                        },
+                        // {% endif %}
+                        // {% if Perm['account management'] %}
                         {
                             id: "users_management",
                             icon: "mdi mdi-account-supervisor",
@@ -198,7 +218,10 @@
                                                         labelWidth: 170,
                                                         label: "Supplier Name",
                                                         view: "text",
-                                                        required: true
+                                                        required: true,
+                                                        attributes: {
+                                                            maxlength: 40
+                                                        }
                                                     },
                                                     {
                                                         id: "supplierContactPersonForm",
@@ -206,7 +229,10 @@
                                                         labelWidth: 170,
                                                         label: "Supplier Contact Person",
                                                         view: "text",
-                                                        required: true
+                                                        required: true,
+                                                        attributes: {
+                                                            maxlength: 40
+                                                        }
                                                     },
                                                     {
                                                         id: "supplierEmailForm",
@@ -214,7 +240,10 @@
                                                         labelWidth: 170,
                                                         label: "Supplier Email",
                                                         view: "text",
-                                                        required: true
+                                                        required: true,
+                                                        attributes: {
+                                                            maxlength: 40
+                                                        }
                                                     },
                                                     {
                                                         id: "supplierPhoneForm",
@@ -244,7 +273,10 @@
                                                         labelWidth: 170,
                                                         label: "Supplier Address",
                                                         view: "text",
-                                                        required: true
+                                                        required: true,
+                                                        attributes: {
+                                                            maxlength: 50
+                                                        }
                                                     }
                                                 ],
                                                 rules: {
@@ -254,6 +286,16 @@
                                                             return false;
                                                         return webix.rules.isEmail(
                                                             value);
+                                                    }, "phone": function (value) {
+                                                        return webix.rules.isNotEmpty(value) && !isNaN(value) && value.length >= 10 && /^\d+$/.test(value) && value.length < 14;
+                                                    }
+                                                },
+                                                on: {
+                                                    "onValidationError": function (id, obj, value) {
+                                                        webix.message({
+                                                            type: "error",
+                                                            text: "Please Imput data correctly"
+                                                        });
                                                     }
                                                 }
                                             },
@@ -282,8 +324,16 @@
                                                                         form.clear();
                                                                         datatable.clearAll();
                                                                         datatable.load("/api/retailSupply/suppliersGetter");
-                                                                    }).fail(function () {
-                                                                        webix.message({ type: "error", text: "Failed to add supplier" });
+                                                                    }).fail(function (xhr) {
+                                                                        try {
+                                                                            var response = JSON.parse(xhr.responseText);
+                                                                            webix.message({
+                                                                                type: "error",
+                                                                                text: response.message
+                                                                            });
+                                                                        } catch (e) {
+                                                                            webix.message({ type: "error", text: "An unexpected error occurred." });
+                                                                        }
                                                                     });
                                                             } else {
                                                                 webix.message("Please fill out all fields in the form.");
@@ -298,6 +348,22 @@
                                                 id: "supplierDatatable",
                                                 editable: true,
                                                 save: "/api/retailSupply/supplierUpdater",
+                                                on: {
+                                                    onValidationError: function (id, obj, value) {
+                                                        webix.message({
+                                                            type: "error",
+                                                            text: `Please Imput data correctly in ${obj._id}`
+                                                        });
+                                                    },
+                                                    onAfterEditStart: function (id) {
+                                                        const editor = this.getEditor(id);
+                                                        if (editor && editor.config.editor === "text") {
+                                                            const inputNode = editor.getInputNode();
+                                                            inputNode.setAttribute("maxlength", 20);
+                                                            //
+                                                        }
+                                                    }
+                                                },
                                                 columns: [
                                                     {
                                                         id: "_id",
@@ -318,7 +384,8 @@
                                                             return obj.supplierName;
                                                         },
                                                         editor: "text",
-                                                        sort: 'string'
+                                                        sort: 'string',
+
                                                     },
                                                     {
                                                         id: "contactPerson",
@@ -329,7 +396,8 @@
                                                             return obj.contactPerson;
                                                         },
                                                         editor: "text",
-                                                        sort: 'string'
+                                                        sort: 'string',
+
                                                     },
                                                     {
                                                         id: "email",
@@ -340,7 +408,9 @@
                                                             return obj.email;
                                                         },
                                                         editor: "text",
-                                                        sort: 'string'
+                                                        sort: 'string',
+
+
                                                     },
                                                     {
                                                         id: "phone",
@@ -350,9 +420,7 @@
                                                         template: function (obj) {
                                                             return obj.phone;
                                                         },
-                                                        attributes: {
-                                                            maxlength: 13
-                                                        },
+
                                                         pattern: {
                                                             mask: "####-####-#####"
                                                         },
@@ -376,7 +444,8 @@
                                                             return obj.address;
                                                         },
                                                         editor: "text",
-                                                        sort: 'string'
+                                                        sort: 'string',
+
                                                     },
                                                     {
                                                         id: "actions",
@@ -386,7 +455,21 @@
                                                         },
                                                         width: 100
                                                     }
-                                                ],
+                                                ], rules: {
+                                                    "supplierName": webix.rules.isNotEmpty,
+                                                    "contactPerson": webix.rules.isNotEmpty,
+                                                    "address": webix.rules.isNotEmpty,
+                                                    "email": function (value) {
+                                                        if (!webix.rules.isNotEmpty(value)) return false;
+                                                        return webix.rules.isEmail(value);
+                                                    },
+                                                    "phone": function (value) {
+                                                        if (!webix.rules.isNotEmpty(value)) return false;
+                                                        var cleanValue = value.replace(/-/g, "");
+                                                        var isNum = /^\d+$/.test(cleanValue);
+                                                        return isNum && cleanValue.length >= 10 && cleanValue.length <= 13;
+                                                    }
+                                                },
                                                 url: "/api/retailSupply/suppliersGetter",
                                             },
                                             {}
@@ -412,7 +495,10 @@
                                                         labelWidth: 170,
                                                         label: "Retail Name",
                                                         view: "text",
-                                                        required: true
+                                                        required: true,
+                                                        attributes: {
+                                                            maxlength: 40
+                                                        }
                                                     },
                                                     {
                                                         id: "retailContactPersonForm",
@@ -420,7 +506,10 @@
                                                         labelWidth: 170,
                                                         label: "Retail Contact Person",
                                                         view: "text",
-                                                        required: true
+                                                        required: true,
+                                                        attributes: {
+                                                            maxlength: 40
+                                                        }
                                                     },
                                                     {
                                                         id: "retailEmailForm",
@@ -428,7 +517,10 @@
                                                         labelWidth: 170,
                                                         label: "Retail Email",
                                                         view: "text",
-                                                        required: true
+                                                        required: true,
+                                                        attributes: {
+                                                            maxlength: 40
+                                                        }
                                                     },
                                                     {
                                                         id: "retailPhoneForm",
@@ -458,7 +550,10 @@
                                                         labelWidth: 170,
                                                         label: "Retail Address",
                                                         view: "text",
-                                                        required: true
+                                                        required: true,
+                                                        attributes: {
+                                                            maxlength: 50
+                                                        }
                                                     }
                                                 ],
                                                 rules: {
@@ -468,6 +563,16 @@
                                                             return false;
                                                         return webix.rules.isEmail(
                                                             value);
+                                                    }, "noTelp": function (value) {
+                                                        return webix.rules.isNotEmpty(value) && !isNaN(value) && value.length >= 10 && /^\d+$/.test(value) && value.length < 14;
+                                                    }
+                                                },
+                                                on: {
+                                                    "onValidationError": function (id, obj, value) {
+                                                        webix.message({
+                                                            type: "error",
+                                                            text: "Please Imput data correctly"
+                                                        });
                                                     }
                                                 }
                                             },
@@ -496,8 +601,16 @@
                                                                         form.clear();
                                                                         datatable.clearAll();
                                                                         datatable.load("/api/retailSupply/retailGetter");
-                                                                    }).fail(function () {
-                                                                        webix.message({ type: "error", text: "Failed to add retail" });
+                                                                    }).fail(function (xhr) {
+                                                                        try {
+                                                                            var response = JSON.parse(xhr.responseText);
+                                                                            webix.message({
+                                                                                type: "error",
+                                                                                text: response.message
+                                                                            });
+                                                                        } catch (e) {
+                                                                            webix.message({ type: "error", text: "An unexpected error occurred." });
+                                                                        }
                                                                     });
                                                             } else {
                                                                 webix.message("Please fill out all fields in the form.");
@@ -512,6 +625,35 @@
                                                 id: "retailDatatable",
                                                 editable: true,
                                                 save: "/api/retailSupply/retailUpdater",
+                                                rules: {
+                                                    "retailEmail": function (value) {
+                                                        if (!webix.rules.isNotEmpty(
+                                                            value))
+                                                            return false;
+                                                        return webix.rules.isEmail(
+                                                            value);
+                                                    }, "retailPhoneNumber": function (value) {
+                                                        return webix.rules.isNotEmpty(value) && !isNaN(value) && value.length >= 10 && /^\d+$/.test(value) && value.length < 14;
+                                                    },
+                                                    "retailName": webix.rules.isNotEmpty,
+                                                    "retailContactPerson": webix.rules.isNotEmpty,
+                                                    "retailAddress": webix.rules.isNotEmpty
+                                                },
+                                                on: {
+                                                    onValidationError: function (id, obj, value) {
+                                                        webix.message({
+                                                            type: "error",
+                                                            text: `Please Imput data correctly in ${obj._id}`
+                                                        });
+                                                    },
+                                                    onAfterEditStart: function (id) {
+                                                        const editor = this.getEditor(id);
+                                                        if (editor && editor.config.editor === "text") {
+                                                            const inputNode = editor.getInputNode();
+                                                            inputNode.setAttribute("maxlength", 20);
+                                                        }
+                                                    }
+                                                },
                                                 columns: [
                                                     {
                                                         id: "_id",
@@ -532,7 +674,10 @@
                                                             return obj.retailName;
                                                         },
                                                         sort: 'string',
-                                                        editor: "text"
+                                                        editor: "text",
+                                                        attributes: {
+                                                            maxlength: 40
+                                                        }
                                                     },
                                                     {
                                                         id: "retailContactPerson",
@@ -543,7 +688,10 @@
                                                             return obj.retailContactPerson;
                                                         },
                                                         sort: 'string',
-                                                        editor: "text"
+                                                        editor: "text",
+                                                        attributes: {
+                                                            maxlength: 40
+                                                        }
                                                     },
                                                     {
                                                         id: "retailPhoneNumber",
@@ -579,7 +727,10 @@
                                                             return obj.retailEmail;
                                                         },
                                                         sort: 'string',
-                                                        editor: "text"
+                                                        editor: "text",
+                                                        attributes: {
+                                                            maxlength: 40
+                                                        }
                                                     },
                                                     {
                                                         id: "retailAddress",
@@ -590,7 +741,10 @@
                                                             return obj.retailAddress;
                                                         },
                                                         sort: 'string',
-                                                        editor: "text"
+                                                        editor: "text",
+                                                        attributes: {
+                                                            maxlength: 50
+                                                        }
                                                     },
                                                     {
                                                         id: "actions",
@@ -625,6 +779,7 @@
 
                 var sidebarRoutes = {
                     dashboard: "/",
+                    product_management: "/management/product",
                     users_management: "/management/users",
                     supplyAndRetailManagement: "/retail-supply"
                 };

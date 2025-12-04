@@ -68,17 +68,14 @@
                     {},
                     {},
                     {},
+                    {},
+                    {},
+                    {},
                     {
                         view: "label",
                         width: 170,
-                        label: "Hello! {{name}}",
-                        autowidth: true
-                    },
-                    {
-                        view: "label",
-                        width: 100,
-                        label: "As {{role}}",
-                        labelWidth: "auto"
+                        label: "Hello! {{name}} As {{role}}",
+                        autowidth: true,
                     },
                     {
                         view: "button",
@@ -88,7 +85,9 @@
                             window.location.href = '/users/logout';
                         }
                     },
-                    {}
+                    {
+                        width: 10
+                    }
                     ]
                 },
                 {
@@ -103,17 +102,22 @@
                             id: "dashboard",
                             icon: "mdi mdi-home",
                             value: "Dashboard"
-                        }
-                            //{% if Perm['retail and shipment'] %}
-                            ,
+                        },
+                        // {% if Perm['retail and shipment']%}
                         {
                             id: "supplyAndRetailManagement",
                             icon: "mdi mdi-city",
                             value: "Supply and Retail Management",
-                        }
-                            // {% endif %}
-                            // {% if Perm['account management'] %}
-                            ,
+                        },
+                        // {% endif %}
+                        // {% if Perm['stock management'] %}
+                        {
+                            id: "product_management",
+                            icon: "mdi mdi-archive",
+                            value: "Products management"
+                        },
+                        // {% endif %}
+                        // {% if Perm['account management'] %}
                         {
                             id: "users_management",
                             icon: "mdi mdi-account-supervisor",
@@ -160,7 +164,7 @@
                                 ]
                             },
                             {
-                                height: 700,
+                                height: 800,
                                 type: "clean",
                                 cols: [{
                                     view: "datatable",
@@ -202,19 +206,7 @@
                                         header: "Phone Number",
                                         width: 120,
                                         editor: "text",
-                                        type: "int",
-                                        pattern: {
-                                            mask: "####-####-#####"
-                                        },
-                                        validate: function (value) {
-
-                                            return value
-                                                .length >= 10 &&
-                                                /^\d+$/.test(
-                                                    value
-                                                );
-                                        },
-                                        sort: "string"
+                                        sort: "string",
                                     },
 
                                     {
@@ -231,7 +223,13 @@
                                         header: "Position",
                                         editor: "richselect",
                                         collection: "/users/api/rolesSelect",
-                                        sort: "string"
+                                        sort: "string",
+                                        width: 150
+                                    },
+                                    {
+                                        id: "salary",
+                                        header: "Salary",
+                                        sort: "string",
                                     },
                                     {
                                         id: "lastLogin",
@@ -258,7 +256,7 @@
                                             return webix.rules.isEmail(value);
                                         },
                                         "noTelp": function (value) {
-                                            return webix.rules.isNotEmpty(value) && !isNaN(value);
+                                            return webix.rules.isNotEmpty(value) && !isNaN(value) && value.length >= 10 && /^\d+$/.test(value) && value.length < 14;
                                         }
                                     },
                                     on: {
@@ -273,7 +271,6 @@
                                 },
                                 {
                                     paddingX: 10,
-                                    height: 500,
                                     rows: [{
                                         view: "label",
                                         label: "Create User",
@@ -290,7 +287,10 @@
                                                 labelWidth: 120,
                                                 name: "namaDepan",
                                                 placeholder: "Insert First Name",
-                                                required: true
+                                                required: true,
+                                                attributes: {
+                                                    maxlength: 40
+                                                }
                                             },
                                             {
                                                 view: "text",
@@ -298,7 +298,10 @@
                                                 labelWidth: 120,
                                                 name: "namaBelakang",
                                                 placeholder: "Insert Last Name",
-                                                required: true
+                                                required: true,
+                                                attributes: {
+                                                    maxlength: 40
+                                                }
                                             },
 
                                             {
@@ -308,7 +311,10 @@
                                                 labelWidth: 120,
                                                 name: "email",
                                                 placeholder: "Insert Email",
-                                                required: true
+                                                required: true,
+                                                attributes: {
+                                                    maxlength: 40
+                                                }
                                             },
                                             {
                                                 view: "text",
@@ -328,7 +334,10 @@
                                                 label: "Password",
                                                 name: "password",
                                                 placeholder: "Insert Password",
-                                                required: true
+                                                required: true,
+                                                attributes: {
+                                                    maxlength: 40
+                                                }
                                             },
                                             {
                                                 view: "richselect",
@@ -465,9 +474,23 @@
                                                             label: "New Roles",
                                                             placeholder: "Input the new roles",
                                                             required: true,
-                                                            labelWidth: 100
+                                                            labelWidth: 100,
+                                                            attributes: {
+                                                                maxlength: 20
+                                                            }
                                                         },
-
+                                                        {
+                                                            id: "newRoleSalary",
+                                                            name: "role-salary",
+                                                            view: "text",
+                                                            label: "Salary",
+                                                            placeholder: "Input Salary",
+                                                            labelWidth: 100,
+                                                            required: true,
+                                                            attributes: {
+                                                                maxlength: 20
+                                                            }
+                                                        },
                                                         {
                                                             cols: [
                                                                 {
@@ -542,6 +565,7 @@
                                                                                         webix.message({ type: "error", text: "Error: " + response.text });
                                                                                     } else {
                                                                                         webix.message('Data successfuly added');
+                                                                                        updateTable();
                                                                                     }
 
                                                                                 }
@@ -579,7 +603,15 @@
                                                             name: 'permission.stock\ management',
                                                             labelWidth: 150
                                                         }
-                                                    ]
+                                                    ],
+                                                    rules: {
+                                                        "role-salary": function (value) {
+                                                            console.log(value)
+                                                            if (value > 0) {
+                                                                return true;
+                                                            }
+                                                        }
+                                                    }
                                                 }]
                                             }
                                         ]
@@ -603,9 +635,9 @@
             };
             if ($$("mainSidebar")) {
                 $$("mainSidebar").select("users_management");
-
                 var sidebarRoutes = {
                     dashboard: "/",
+                    product_management: "/management/product",
                     users_management: "/management/users",
                     supplyAndRetailManagement: "/retail-supply"
                 };
@@ -741,7 +773,10 @@
                             label: "New Password",
                             placeholder: "Enter new password",
                             labelWidth: 150,
-                            required: true
+                            required: true,
+                            attributes: {
+                                maxlength: 40
+                            }
                         },
                         {
                             view: "text",
@@ -750,7 +785,10 @@
                             label: "Confirm Password",
                             placeholder: "Re-enter new password",
                             labelWidth: 150,
-                            required: true
+                            required: true,
+                            attributes: {
+                                maxlength: 40
+                            }
                         },
                         {
                             margin: 5,

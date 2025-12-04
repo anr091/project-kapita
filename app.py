@@ -1,5 +1,6 @@
 from flask import Flask, render_template,g
 from common.config import *
+from common.api_controller import dashboardDataFetch
 from common.login_manager import user_bp,check_login
 from common.api_controller import API_BP
 from common.MongoConnection import mongoConnection
@@ -18,7 +19,8 @@ def index():
     if auth_check:
         print("tidak ada session aktif")
         return auth_check
-    return render_template('management_product.html',name=g.user['name'],role=g.user['roleName'],title="Manage Product",Perm=g.user['rolePerm'],firstTime = g.user['firstLogon'])
+    dashboardDat = dashboardDataFetch()
+    return render_template('index.html',name=g.user['name'],role=g.user['roleName'],title="Manage Product",Perm=g.user['rolePerm'],firstTime=g.user['firstLogon'],dbDat=dashboardDat)
 
 @app.route('/management/users')
 def usersManagement():
@@ -44,6 +46,13 @@ def retailSupply():
         return auth_check
     return render_template('retailAndSupply.html',name=g.user['name'],role=g.user['roleName'],title="Supply and Retail",Perm=g.user['rolePerm'])
 
+@app.route('/management/product')
+def dashboard():
+    auth_check = check_login()
+    if auth_check:
+        print("tidak ada session aktif")
+        return auth_check
+    return render_template('management_product.html',name=g.user['name'],role=g.user['roleName'],title="Dashboard",Perm=g.user['rolePerm'])
 
 if __name__ == "__main__":
     app.run(debug=True,host="0.0.0.0")

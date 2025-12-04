@@ -44,7 +44,6 @@ def check_login():
         return response
     g.user = session_data
     g.user['rolePerm'] = roleCollection.collection.find_one({'_id':g.user['role']})['permission']
-    print(g.user['rolePerm'])
     return None
 
 
@@ -74,9 +73,7 @@ def login():
         user = authenticate_user(userId,password)
         if user:
             if user['status'] == "non-active":
-                print("masuk akun tidak aktif")
                 return jsonify({"status":"error","message":"Akun sudah tidak aktif"}),401
-            print("yang ini gak dijalanin kan?")
             user.pop('status')
             token = session_manager.generate_token(**user)
             response = make_response(redirect(url_for('index')))
@@ -117,9 +114,12 @@ def users():
             return Auth 
         AuthRole = roleCollection.collection.find_one({'_id':g.user['role']})['permission']['account management']
         if AuthRole:
-            cursor = userCollection.collection.find({}, {'password': 0})
+            getSalary = list(roleCollection.collection.find())
+            salaryDat = {r['_id']:r['role-salary'] for r in getSalary}
+            getUser = userCollection.collection.find({}, {'password': 0})
             out = []
-            for u in cursor:
+            for u in getUser:
+                u["salary"] = "Rp."+str(salaryDat[u['role']])
                 out.append(u)
             return jsonify(out)
         return jsonify({'status':'error'}),401
@@ -137,11 +137,10 @@ def updateUser():
                 data = request.form
                 userId = data.get('_id')
                 action = data.get('webix_operation')
-                print(action)
                 if action == 'update':
                     updateData = {}
                     for key,value in data.items():
-                        if key not in ['_id','webix_operation','targetId']:
+                        if key not in ['id','webix_operation','targetId','salary','lastLogin','delBtn']:
                             updateData[key] = value
                     if not userId:
                         return jsonify({'status':'error','text':'missing id'}),400
@@ -150,10 +149,9 @@ def updateUser():
                         {'$set':updateData}
                     )
                     if result:
-                        print(userId,g.user['id'])
                         if userId == g.user['id']:
                             token = request.cookies.get('token')
-                        session_manager.remove_token(token)
+                            session_manager.remove_token(token)
                         return jsonify({'status':'success','text':'data updated'}),200
                 return jsonify({'status':'error','text':'unknown error'}),500
         except Exception as e:
@@ -174,10 +172,6 @@ def deleteUser():
             return jsonify({'status':'success'}),201
     return jsonify({'message':'forbidden'}),401
 
-
-@user_bp.route('/profile',methods=['GET'])
-def user_profile():
-    pass
 
 @user_bp.route('/api/resetPassword',methods=['PATCH'])
 def resetPassword():

@@ -13,6 +13,7 @@ MONGODB_PRODUCT_COLLECTION = 'products'
 MONGODB_PRODUCT_LOG_COLLECTION = 'products-log'
 MONGODB_PRODUCT_ARRIVAL_COLLECTION = 'products-arrival-report'
 MONGODB_PRODUCT_INVENTORY_COLLECTION = 'product-inventory'
+MONGODB_PRODUCT_INVENTORY_COUNTER = 'product-inventory-log'
 
 """ DB EXTERNAL """
 MONGODB_EXTERNAL_DB = "pj-kapita-external"

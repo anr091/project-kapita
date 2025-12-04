@@ -2,25 +2,22 @@ import jwt
 from .MongoConnection import mongoConnection
 from .config import *
 from datetime import datetime,timedelta,timezone
-from .MongoConnection import mongoConnection
-rolesManConnect = mongoConnection(MONGODB_CONNECTION_STRING,MONGODB_AUTH_DB,MONGODB_ROLES_COLLECTION)
-sessionConnect = mongoConnection(MONGODB_CONNECTION_STRING,MONGODB_AUTH_DB,MONGODB_SESSION_COLLECTION)
+from .MongoConnection import *
 WIB_OFFSET = timezone(timedelta(hours=7), name='WIB')
 class SessionManager:
     def __init__(self):
         self.authMongo = mongoConnection(MONGODB_CONNECTION_STRING,MONGODB_AUTH_DB,MONGODB_SESSION_COLLECTION)
         self.secret_key = "secret_key_kapita_2025"
-
     def generate_token(self,username,role,firstTime,id):
         today = datetime.now(WIB_OFFSET).date()
         cutoff_datetime = datetime(today.year, today.month, today.day, tzinfo=WIB_OFFSET)
-        result = sessionConnect.collection.delete_many({
+        result = sessionCollection.collection.delete_many({
                 "expires_at": {"$lt": cutoff_datetime}
             })
         if result:
             print(f"Purge Data: {result.deleted_count} dari old session")
         now = datetime.now(WIB_OFFSET)
-        roleData = rolesManConnect.collection.find_one({'_id':role})
+        roleData = roleCollection.collection.find_one({'_id':role})
         payload = {
             "name" : username,
             "role" : role,
@@ -46,9 +43,8 @@ class SessionManager:
             session = self.authMongo.collection.find_one({"token":token})
             if session is None:
                 return None
-            #mastiin apakah token masih valid
             payload = jwt.decode(token,self.secret_key,algorithms=['HS256'])
-            payload['roleName'] = rolesManConnect.collection.find_one({'_id':payload['role']})['role-name']
+            payload['roleName'] = roleCollection.collection.find_one({'_id':payload['role']})['role-name']
             return payload
         except jwt.ExpiredSignatureError:
             self.remove_token(token)
