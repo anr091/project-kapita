@@ -250,7 +250,7 @@ def productCreator():
         formData['_id']=newId
         newIdInv = productInventoryCollection.collection.find_one(sort=[("_id", -1)])
         if newIdInv:
-            newIdInv = f"INV{int(newIdInv["_id"].split('INV')[1])+1:04}"
+            newIdInv = f"INV{int(newIdInv['_id'].split('INV')[1])+1:04}"
         else:
             newIdInv = "INV0001"
         klasifikasi = {
@@ -439,7 +439,6 @@ def retailGetter():
 
 @API_BP.route('/suppliers/options')
 def supplierOptions():
-    #key value pair _id to _id
     data = list(supplierCollection.collection.find())
     out = [{'id':str(r['_id']),'value':str(r['supplierName'])} for r in data]
     print(out)
@@ -473,7 +472,6 @@ def arrivalReportCreator():
         data = request.get_json()
         data['_id']=newId
         data['receivedBy'] = g.user['id']
-        #print(data['product'][0]['status']) <- way to parse (one try mantap jir)
         data['arrivalDate'] = now
         counter = 0
         totalCount = 0

@@ -14,6 +14,99 @@
 
 <body>
     <script>
+
+        //{% if firstTime %}
+        let first = `{{firstTime}}`;
+        changePasswordModal = webix.ui({
+            view: "window",
+            id: "updatePasswordFirstTime",
+            width: 400,
+            position: "center",
+            modal: true,
+            head: "Change Password",
+            body: {
+                view: "form",
+                id: "resetPasswordForm",
+                elements: [
+                    {
+                        view: "text",
+                        type: "password",
+                        name: "newPassword",
+                        label: "New Password",
+                        placeholder: "Enter new password",
+                        labelWidth: 150,
+                        required: true
+                    },
+                    {
+                        view: "text",
+                        type: "password",
+                        name: "checkPassword",
+                        label: "Confirm Password",
+                        placeholder: "Re-enter new password",
+                        labelWidth: 150,
+                        required: true
+                    },
+                    {
+                        margin: 5,
+                        view: "button",
+                        value: "Reset Password",
+                        css: "webix_primary",
+                        click: function () {
+                            const form = $$('resetPasswordForm');
+                            if (!form.validate()) {
+                                webix.message({
+                                    type: "error",
+                                    text: "All fields must be filled correctly."
+                                });
+                                return;
+                            }
+                            const values = form.getValues();
+                            if (values.newPassword !== values.checkPassword) {
+                                webix.message({
+                                    type: "error",
+                                    text: "Passwords do not match."
+                                });
+                                return;
+                            }
+                            webix.ajax()
+                                .headers({ 'Content-Type': 'application/json' })
+                                .patch('/users/api/resetPassword', JSON.stringify({ _id: first, newPassword: values.newPassword }),
+                                    function (text, data) {
+                                        const response = JSON.parse(text);
+                                        if (response.status === "error") {
+                                            webix.message({
+                                                type: "error",
+                                                text: "Error: " + response.text
+                                            });
+                                        } else {
+                                            webix.message('Password successfully changed');
+                                            $$('updatePasswordFirstTime').close();
+                                        }
+                                    }
+                                )
+                                .fail(function (xhr) {
+                                    console.log(xhr.status);
+                                    webix.message({
+                                        type: "error",
+                                        text: "Error at resetting password!"
+                                    })
+                                })
+                        }
+                    },
+                    {
+                        view: "label",
+                        label: "change password immediately to ensure safety",
+                        align: "center"
+                    }
+                ],
+                rules: {
+                    "newPassword": webix.rules.isNotEmpty,
+                    "checkPassword": webix.rules.isNotEmpty
+                }
+            }
+        }).show();
+        delete first;
+        //{% endif %}
         var updateRole = false;
         webix.ready(function () {
             webix.ui({

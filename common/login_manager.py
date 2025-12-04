@@ -167,10 +167,13 @@ def deleteUser():
     AuthRole = roleCollection.collection.find_one({'_id':g.user['role']})['permission']['account management']
     if AuthRole:
         idForDelete = request.json
+        print(g.user['id'],idForDelete['_id'])
+        if g.user['id']==idForDelete['_id']:
+            return jsonify({'status':'forbidden'}),403
         deletion = userCollection.collection.delete_one(idForDelete)
         if deletion: 
             return jsonify({'status':'success'}),201
-    return jsonify({'message':'forbidden'}),401
+    return jsonify({'message':'no Auth'}),401
 
 
 @user_bp.route('/api/resetPassword',methods=['PATCH'])
