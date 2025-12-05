@@ -596,10 +596,10 @@ def createShipment():
                 i['id'] = newId + i['id']
                 fetchDataLogistik = productCollection.collection.find_one({'_id':i['productId']})['logistik']
                 i['sellPrice'] = fetchDataLogistik['sellPrice']
-                i['subtotalPrice'] = float(i['sellPrice'])*(i['shippedQuantity'])
+                i['subtotalPrice'] = float(i['sellPrice'])*int(i['shippedQuantity'])
                 totalBuyCount+= float(fetchDataLogistik['buyPrice'])*int(i['shippedQuantity'])
                 print(float(i['subtotalPrice']))
-                productInventoryCollection.collection.update_one({'productID': i['productId']},{'$inc': {'quantityNow': -int(i['shippedQuantity']),'latestStoredPrice':-float(i['subtotalPrice'])}})
+                productInventoryCollection.collection.update_one({'productID': i['productId']},{'$inc': {'quantityNow': -int(i['shippedQuantity']),'latestStoredPrice':-float(totalBuyCount)}})
                 totalCount+=i['subtotalPrice']
         data['totalPrice'] = totalCount
         send = shipmentCollection.collection.insert_one(data)

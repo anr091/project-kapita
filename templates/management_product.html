@@ -277,13 +277,13 @@
                             value: "Supply and Retail Management",
                         },
                         // {% endif %}
-                        // {% if Perm['stock management'] %}
+
                         {
                             id: "product_management",
                             icon: "mdi mdi-archive",
                             value: "Products management"
                         },
-                        // {% endif %}
+
                         // {% if Perm['account management'] %}
                         {
                             id: "users_management",
@@ -333,7 +333,6 @@
                                                             }
                                                         }
                                                     }
-                                                    //{% if Perm['report data'] %}
                                                     ,
                                                     {
                                                         cols: [
@@ -347,6 +346,7 @@
                                                                 }
                                                             },
                                                             //{% endif %}
+                                                            //{% if Perm['report data'] %}
                                                             {
                                                                 view: "button",
                                                                 css: "webix_primary",
@@ -364,9 +364,9 @@
                                                                     $$('shipmentModal').show();
                                                                 }
                                                             }
+                                                            // {% endif %}
                                                         ]
                                                     }
-                                                    // {% endif %}
                                                     ,
                                                     {
                                                         cols: [
