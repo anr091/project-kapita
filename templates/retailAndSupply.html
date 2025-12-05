@@ -558,13 +558,14 @@
                                                 ],
                                                 rules: {
                                                     "retailEmail": function (value) {
-                                                        if (!webix.rules.isNotEmpty(
-                                                            value))
-                                                            return false;
-                                                        return webix.rules.isEmail(
-                                                            value);
-                                                    }, "noTelp": function (value) {
-                                                        return webix.rules.isNotEmpty(value) && !isNaN(value) && value.length >= 10 && /^\d+$/.test(value) && value.length < 14;
+                                                        if (!webix.rules.isNotEmpty(value)) return false;
+                                                        return webix.rules.isEmail(value);
+                                                    },
+                                                    "retailPhoneNumber": function (value) {
+                                                        if (!webix.rules.isNotEmpty(value)) return false;
+                                                        var cleanValue = value.replace(/-/g, "");
+                                                        var isNum = /^\d+$/.test(cleanValue);
+                                                        return isNum && cleanValue.length >= 10 && cleanValue.length <= 13;
                                                     }
                                                 },
                                                 on: {
