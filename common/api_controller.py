@@ -83,7 +83,7 @@ def totalCountUpdater(value):
         result = f"ITMCHRT{result+1:010}"
         totalPrice = list(productInventoryCollection.collection.find({},{"latestStoredPrice": 1,"_id":0}))
         if totalPrice:
-            totalPrice = sum([x.get("latestStoredPrice") for x in totalPrice])
+            totalPrice = float(sum([x.get("latestStoredPrice") for x in totalPrice]))
         if logIdGetter['date'] == formatted_string:
             updating=True
     else:
@@ -96,7 +96,7 @@ def totalCountUpdater(value):
                     "_id":result,
                     "totalItems":int(logIdGetter['totalItems'])-value,
                     "date": formatted_string,
-                    'totalPrice':str(totalPrice)
+                    'totalPrice':totalPrice
                 }
         else:
                 if 0<value:
@@ -113,8 +113,6 @@ def totalCountUpdater(value):
     if itemLog:
         return True
     return False
-
-
 
 API_BP = Blueprint('api',__name__,url_prefix='/api/')
 
@@ -566,14 +564,14 @@ def createShipment():
         inventoryChecker = {item['productID']: item.get('quantityNow', 0) for item in inventoryNow}
         
         for item in data['product']:
-            p_id = item['productId']
-            req_qty = int(item['shippedQuantity'])
-            available_qty = inventoryChecker.get(p_id, 0)
+            prodId = item['productId']
+            ReqQty = int(item['shippedQuantity'])
+            availableQty = inventoryChecker.get(prodId, 0)
             
-            if available_qty < req_qty:
+            if availableQty < ReqQty:
                 return jsonify({
                     'status': 'error',
-                    'message': f'Insufficient stock for Product {p_id}. Available: {available_qty}, Requested: {req_qty}'
+                    'message': f'Insufficient stock for Product {prodId}. Available: {availableQty}, Requested: {ReqQty}'
                 }), 400
         
         newId_doc = shipmentCollection.collection.find_one(sort=[("_id", -1)])
@@ -598,8 +596,9 @@ def createShipment():
                 i['id'] = newId + i['id']
                 fetchDataLogistik = productCollection.collection.find_one({'_id':i['productId']})['logistik']
                 i['sellPrice'] = fetchDataLogistik['sellPrice']
-                i['subtotalPrice'] = float(i['sellPrice'])*int(i['shippedQuantity'])
+                i['subtotalPrice'] = float(i['sellPrice'])*(i['shippedQuantity'])
                 totalBuyCount+= float(fetchDataLogistik['buyPrice'])*int(i['shippedQuantity'])
+                print(float(i['subtotalPrice']))
                 productInventoryCollection.collection.update_one({'productID': i['productId']},{'$inc': {'quantityNow': -int(i['shippedQuantity']),'latestStoredPrice':-float(i['subtotalPrice'])}})
                 totalCount+=i['subtotalPrice']
         data['totalPrice'] = totalCount

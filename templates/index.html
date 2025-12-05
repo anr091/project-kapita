@@ -138,17 +138,14 @@
                     {},
                     {},
                     {},
+                    {},
+                    {},
+                    {},
                     {
                         view: "label",
                         width: 170,
-                        label: "Hello! {{name}}",
-                        autowidth: true
-                    },
-                    {
-                        view: "label",
-                        width: 100,
-                        label: "As {{role}}",
-                        autowidth: true
+                        label: "Hello! {{name}} As {{role}}",
+                        autowidth: true,
                     },
                     {
                         view: "button",
@@ -158,7 +155,9 @@
                             window.location.href = '/users/logout';
                         }
                     },
-                    {}
+                    {
+                        width: 10
+                    }
                     ]
                 },
                 {
