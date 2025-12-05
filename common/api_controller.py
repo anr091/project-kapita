@@ -1,5 +1,24 @@
+"""
+API Controller Module
+
+This module provides API endpoints for managing products, roles, suppliers, retailers, and inventory.
+It handles various operations including CRUD operations for products, user role management,
+inventory tracking, and supplier/retailer management.
+
+Routes:
+    /api/products - Manage product inventory
+    /api/roles - Handle user role management
+    /api/suppliers - Manage supplier information
+    /api/retailers - Manage retailer information
+    /api/inventory - Handle inventory operations
+
+Dependencies:
+    - Flask for web framework
+    - MongoDB for data storage
+    - Custom modules: MongoConnection, login_manager, config
+"""
+
 from flask import Blueprint,g,jsonify,request
-from pymongo import UpdateOne
 from common.MongoConnection import *
 from common.login_manager import check_login
 from common.config import *
@@ -46,11 +65,11 @@ def sanitizeForWebix(i):
 
 def dashboardDataFetch():
     _dict = {}
-    _dict['suppliers'] = int(supplierCollection.collection.count_documents({}))
-    _dict['retails'] = int(retailCollection.collection.count_documents({}))
-    _dict['items'] = int(productCollection.collection.count_documents({}))
+    _dict['suppliers'] = str(supplierCollection.collection.count_documents({}))
+    _dict['retails'] = str(retailCollection.collection.count_documents({}))
+    _dict['items'] = str(productCollection.collection.count_documents({}))
     totalPrice = inventoryCountCollection.collection.find_one(sort=[('_id',-1)])['totalPrice']
-    _dict['totalPrice'] = int(0 if totalPrice == [] else totalPrice)
+    _dict['totalPrice'] = str(0 if totalPrice == [] else totalPrice)
     return _dict
 
 def totalCountUpdater(value):
@@ -77,7 +96,7 @@ def totalCountUpdater(value):
                     "_id":result,
                     "totalItems":int(logIdGetter['totalItems'])-value,
                     "date": formatted_string,
-                    'totalPrice':totalPrice
+                    'totalPrice':str(totalPrice)
                 }
         else:
                 if 0<value:
@@ -168,7 +187,7 @@ def updateRole():
             return jsonify({'message':'roles with the same name already exist','status':'error'}),403
         if uniqueRoleCheckerPerm and uniqueRoleCheckerPerm['_id']!= formData['_id']:
             return jsonify({'message':'roles with the same rules already exist','status':'error'}),403
-        if int(formData['role-salary'])<0:
+        if float(formData['role-salary'])<0:
             return jsonify({'message':'salary cannot go below 0!','status':'error'}),403
         dataId =  formData.get('_id')
         roleUpdater = roleCollection.collection.update_one({'_id':dataId},{'$set':formData})
@@ -358,7 +377,7 @@ def updateProduct():
             'at':datetime.now()
         })
         productInStock = productInventoryCollection.collection.find_one({'productID':data['_id']})
-        newPrice = int(data['logistik.buyPrice'])*productInStock['quantityNow']
+        newPrice = float(data['logistik.buyPrice'])*productInStock['quantityNow']
         productInventoryCollection.collection.update_one({'productID':data['_id']},{'$set':{'latestStoredPrice':newPrice}})
         totalCountUpdater(0)
         if result and log:
@@ -482,9 +501,9 @@ def arrivalReportCreator():
                 i['buyPrice']=i['buyPrice']['logistik']['buyPrice']
             if int(i['receivedQuantity'])>0:
                 counter+=int(i['receivedQuantity'])
-                i['subtotalPrice'] = int(i['buyPrice'])*int(i['receivedQuantity'])
+                i['subtotalPrice'] = float(i['buyPrice'])*int(i['receivedQuantity'])
                 totalCount+=i['subtotalPrice']
-                productInventoryCollection.collection.update_one({'productID':i['productId']},{'$inc':{'quantityNow':int(i['receivedQuantity']),'latestStoredPrice':int(i['subtotalPrice'])},'$set':{'latestAcceptedDate':now}})
+                productInventoryCollection.collection.update_one({'productID':i['productId']},{'$inc':{'quantityNow':int(i['receivedQuantity']),'latestStoredPrice':float(i['subtotalPrice'])},'$set':{'latestAcceptedDate':now}})
             else:
                 return jsonify({'status':'error'}),400
         data['totalPrice'] = totalCount
@@ -579,9 +598,9 @@ def createShipment():
                 i['id'] = newId + i['id']
                 fetchDataLogistik = productCollection.collection.find_one({'_id':i['productId']})['logistik']
                 i['sellPrice'] = fetchDataLogistik['sellPrice']
-                i['subtotalPrice'] = int(i['sellPrice'])*int(i['shippedQuantity'])
-                totalBuyCount+= int(fetchDataLogistik['buyPrice'])*int(i['shippedQuantity'])
-                productInventoryCollection.collection.update_one({'productID': i['productId']},{'$inc': {'quantityNow': -int(i['shippedQuantity']),'latestStoredPrice':-int(i['subtotalPrice'])}})
+                i['subtotalPrice'] = float(i['sellPrice'])*int(i['shippedQuantity'])
+                totalBuyCount+= float(fetchDataLogistik['buyPrice'])*int(i['shippedQuantity'])
+                productInventoryCollection.collection.update_one({'productID': i['productId']},{'$inc': {'quantityNow': -int(i['shippedQuantity']),'latestStoredPrice':-float(i['subtotalPrice'])}})
                 totalCount+=i['subtotalPrice']
         data['totalPrice'] = totalCount
         send = shipmentCollection.collection.insert_one(data)

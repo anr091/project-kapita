@@ -1,3 +1,33 @@
+"""
+Login and User Authentication Manager
+
+This module handles user authentication, session management, and user-related operations.
+It provides functionality for user login, registration, session validation, and password management.
+
+Key Features:
+- User authentication with Argon2 password hashing
+- Session management with token-based authentication
+- User registration and account management
+- Role-based access control
+- Password reset functionality
+
+Routes:
+    /users/api/register - Register a new user
+    /users/login - User login endpoint
+    /users/logout - User logout endpoint
+    /users/roles - Get available user roles
+    /users/ - Get all users (admin only)
+    /users/update - Update user information
+    /users/delete - Delete a user (admin only)
+    /users/reset-password - Reset user password
+
+Dependencies:
+    - Flask for web framework
+    - argon2-cffi for password hashing
+    - MongoDB for data storage
+    - Custom modules: config, session_manager, MongoConnection, user_creator
+"""
+
 import argon2
 from .config import *
 from .session_manager import SessionManager

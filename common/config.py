@@ -1,4 +1,26 @@
-""" CONNECTION """
+"""
+Application Configuration Module
+
+This module contains all the configuration settings and constants used throughout the application.
+It includes database connection strings, collection names, and other configuration parameters.
+
+Configuration Sections:
+    - CONNECTION: Main database connection string
+    - DB AUTH: Authentication-related database and collection names
+    - DB PRODUCT: Product-related database and collection names
+    - DB EXTERNAL: External service-related database and collection names
+
+Security Note:
+    - This file contains sensitive information like database credentials.
+    - In a production environment, consider using environment variables or a secure
+      configuration management system instead of hardcoded values.
+
+Dependencies:
+    - None (this is a configuration-only module)
+"""
+
+# CONNECTION
+""" MongoDB connection string for the main database cluster """
 MONGODB_CONNECTION_STRING = "mongodb+srv://672023173:672023173@cluster0.361agam.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 """ DB AUTH """

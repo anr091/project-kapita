@@ -1,3 +1,34 @@
+"""
+MongoDB Connection Handler
+
+This module provides a simplified interface for connecting to MongoDB collections.
+It initializes and manages connections to various MongoDB collections used throughout the application.
+
+The module creates a mongoConnection class that wraps PyMongo's functionality and provides
+pre-configured connections to all required collections.
+
+Classes:
+    mongoConnection: A wrapper class for MongoDB collection connections.
+
+Global Variables:
+    sessionCollection: MongoDB collection for session management
+    productCollection: MongoDB collection for product data
+    roleCollection: MongoDB collection for user roles and permissions
+    userCollection: MongoDB collection for user accounts
+    productLogCollection: MongoDB collection for product change logs
+    productInventoryCollection: MongoDB collection for inventory data
+    supplierCollection: MongoDB collection for supplier information
+    shipmentLogCollection: MongoDB collection for shipment logs
+    shipmentCollection: MongoDB collection for shipment data
+    retailCollection: MongoDB collection for retail information
+    arrivalCollection: MongoDB collection for product arrivals
+    inventoryCountCollection: MongoDB collection for inventory counts
+
+Dependencies:
+    - pymongo: MongoDB Python driver
+    - config: Local module containing database configuration
+"""
+
 from pymongo import MongoClient
 from .config import *
 

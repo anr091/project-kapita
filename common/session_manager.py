@@ -1,3 +1,27 @@
+"""
+Session Management Module
+
+This module provides session management functionality using JSON Web Tokens (JWT).
+It handles the creation, validation, and management of user sessions with secure token-based authentication.
+
+Key Features:
+- JWT-based session tokens with configurable expiration
+- Automatic session cleanup for expired tokens
+- Role-based access control integration
+- Timezone-aware session management (WIB timezone)
+- Secure token generation and verification
+
+Classes:
+    SessionManager: Handles all session-related operations including token generation,
+                   verification, and cleanup.
+
+Dependencies:
+    - PyJWT for JWT token handling
+    - MongoDB for session storage
+    - datetime for token expiration management
+    - Custom modules: MongoConnection, config
+"""
+
 import jwt 
 from .MongoConnection import mongoConnection
 from .config import *

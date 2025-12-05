@@ -52,7 +52,7 @@ def dashboard():
     if auth_check:
         print("tidak ada session aktif")
         return auth_check
-    return render_template('management_product.html',name=g.user['name'],role=g.user['roleName'],title="Dashboard",Perm=g.user['rolePerm'])
+    return render_template('management_product.html',name=g.user['name'],role=g.user['roleName'],title="Product Management",Perm=g.user['rolePerm'])
 
 if __name__ == "__main__":
     app.run(debug=True,host="0.0.0.0")
