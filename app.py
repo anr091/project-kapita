@@ -4,9 +4,6 @@ from common.api_controller import dashboardDataFetch
 from common.login_manager import user_bp,check_login
 from common.api_controller import API_BP
 from common.MongoConnection import mongoConnection
-stockCollection = mongoConnection(MONGODB_CONNECTION_STRING,MONGODB_PRODUCT_DB,MONGODB_PRODUCT_COLLECTION)
-roleCollection = mongoConnection(MONGODB_CONNECTION_STRING,MONGODB_AUTH_DB,MONGODB_ROLES_COLLECTION)
-userCollection = mongoConnection(MONGODB_CONNECTION_STRING,MONGODB_AUTH_DB,MONGODB_USERS_COLLECTION)
 
 app = Flask(__name__)
 app.register_blueprint(user_bp)

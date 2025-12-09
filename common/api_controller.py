@@ -19,9 +19,9 @@ Dependencies:
 """
 
 from flask import Blueprint,g,jsonify,request
-from common.MongoConnection import *
-from common.login_manager import check_login
-from common.config import *
+from .MongoConnection import *
+from .login_manager import check_login
+from .config import *
 from datetime import datetime
 
 def findABC(_int)->str:
