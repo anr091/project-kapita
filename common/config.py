@@ -21,7 +21,8 @@ Dependencies:
 
 # CONNECTION
 """ MongoDB connection string for the main database cluster """
-MONGODB_CONNECTION_STRING = "mongodb+srv://672023173:672023173@cluster0.361agam.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGODB_CONNECTION_STRING = "mongodb+srv://672023173:672023173@cluster0.361agam.mongodb.net/?appName=Cluster0"
+
 
 """ DB AUTH """
 MONGODB_AUTH_DB = "pj-kapita-auth"
