@@ -136,7 +136,3 @@ All configuration settings are stored in `common/config.py`. Key configurations 
 3. Commit your changes
 4. Push to the branch
 5. Create a new Pull Request
-
-## Support
-
-For support, please contact [your contact information]
